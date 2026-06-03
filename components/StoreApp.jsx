@@ -1107,27 +1107,29 @@ function Support() {
   const { user, navigate, isMobile, toast } = useShop();
   const fmtTime = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   const greeting = { who: 'them', t: 'Assalamu alaikum! 👋 This is the 4iGadgets support team. How can we help you today?', time: '' };
-  const [thread, setThread] = useState([]); // raw support messages from the API
+  const [thread, setThread] = useState([]); // chat messages from the API
   const [val, setVal] = useState('');
   const bodyRef = useRef(null);
 
-  // Flatten DB rows into chat bubbles: each message + any admin reply.
-  const msgs = [greeting];
-  for (const m of thread) {
-    msgs.push({ who: 'me', t: m.message, time: fmtTime(m.createdAt) });
-    if (m.reply) msgs.push({ who: 'them', t: m.reply, time: '' });
-  }
+  // Each row is one message; render by sender (admin -> them/left, you -> me/right).
+  const msgs = [greeting, ...thread.map(m => ({ who: m.sender === 'admin' ? 'them' : 'me', t: m.body, time: fmtTime(m.createdAt) }))];
 
   const load = async () => {
     try { const r = await api('/api/support'); setThread(r.messages || []); } catch { /* not logged in */ }
   };
-  useEffect(() => { if (user) load(); }, [user]);
+  // Load on open and poll so admin replies appear without a manual refresh.
+  useEffect(() => {
+    if (!user) return;
+    load();
+    const iv = setInterval(load, 6000);
+    return () => clearInterval(iv);
+  }, [user]);
 
   const send = async () => {
     if (!val.trim()) return;
     const text = val.trim();
     setVal('');
-    try { await api('/api/support', { method: 'POST', body: JSON.stringify({ message: text }) }); await load(); }
+    try { const r = await api('/api/support', { method: 'POST', body: JSON.stringify({ body: text }) }); setThread(r.messages || []); }
     catch (e) { toast(e.message || 'Could not send message', 'alert-triangle'); }
   };
   useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight; }, [thread]);
@@ -1345,6 +1347,7 @@ function AdminShell({ active, title, children, action }) {
     ['admin-orders', 'package', 'Orders'],
     ['admin-products', 'box', 'Products'],
     ['admin-categories', 'tags', 'Categories'],
+    ['admin-support', 'headset', 'Support'],
   ];
   const collapsed = !isMobile && adminCollapsed;
   return (
@@ -1776,12 +1779,84 @@ function ProductFormModal({ p, onClose, onSave }) {
   );
 }
 
+// ---- Admin support inbox (two-way chat with customers) ----
+function AdminSupport() {
+  const { isMobile, toast } = useShop();
+  const fmtTime = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const [convos, setConvos] = useState([]);
+  const [selId, setSelId] = useState(null);
+  const [val, setVal] = useState('');
+  const bodyRef = useRef(null);
+
+  const load = async () => {
+    try {
+      const r = await api('/api/admin/support');
+      const list = r.conversations || [];
+      setConvos(list);
+      setSelId((cur) => cur || (list[0] && list[0].userId) || null);
+    } catch { /* ignore */ }
+  };
+  // Load + poll so new customer messages appear without a manual refresh.
+  useEffect(() => { load(); const iv = setInterval(load, 6000); return () => clearInterval(iv); }, []);
+
+  const sel = convos.find((c) => c.userId === selId) || null;
+  useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight; }, [sel && sel.messages.length, selId]);
+
+  const send = async () => {
+    if (!val.trim() || !sel) return;
+    const text = val.trim(); setVal('');
+    try { await api('/api/admin/support', { method: 'POST', body: JSON.stringify({ userId: sel.userId, body: text }) }); await load(); }
+    catch (e) { toast(e.message || 'Could not send reply', 'alert-triangle'); }
+  };
+
+  return (
+    <AdminShell active="admin-support" title="Support">
+      {convos.length === 0 ? (
+        <div className="tbl-card"><div className="empty-state"><div className="es-ic"><Icon name="messages-square" /></div><h3>No messages yet</h3><p>Customer support chats will show up here as they come in.</p></div></div>
+      ) : (
+        <div className="tbl-card" style={{ overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '280px 1fr' }}>
+            {/* conversation list */}
+            <div style={{ borderRight: isMobile ? 'none' : '1px solid var(--line)', borderBottom: isMobile ? '1px solid var(--line)' : 'none', maxHeight: isMobile ? 220 : 560, overflowY: 'auto' }}>
+              {convos.map((c) => (
+                <div key={c.userId} onClick={() => setSelId(c.userId)} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '13px 16px', cursor: 'pointer', borderBottom: '1px solid var(--line)', background: c.userId === selId ? 'var(--teal-50)' : '#fff' }}>
+                  <div className="ca" style={{ width: 38, height: 38, borderRadius: '50%', flex: '0 0 38px' }}>{c.userName[0]}</div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div className="between"><span className="cell-strong" style={{ fontSize: 13.5 }}>{c.userName}</span>{c.awaitingReply && <span className="badge b-amber" style={{ fontSize: 10 }}>New</span>}</div>
+                    <div className="muted" style={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.messages[c.messages.length - 1].body}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* chat panel */}
+            {sel && (
+              <div className="chat" style={{ height: isMobile ? 440 : 560, border: 'none', borderRadius: 0 }}>
+                <div className="chat-head">
+                  <div className="av">{sel.userName[0]}</div>
+                  <div><div style={{ fontWeight: 700, fontSize: 14.5 }}>{sel.userName}</div><div className="muted" style={{ fontSize: 12 }}>{sel.userPhone}</div></div>
+                </div>
+                <div className="chat-body" ref={bodyRef}>
+                  {sel.messages.map((m) => <div key={m.id} className={'bubble ' + (m.sender === 'admin' ? 'me' : 'them')}>{m.body}<span className="time">{fmtTime(m.createdAt)}</span></div>)}
+                </div>
+                <div className="chat-input">
+                  <input className="inp" placeholder="Type a reply…" value={val} onChange={(e) => setVal(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') send(); }} />
+                  <button className="btn btn-primary btn-icon" onClick={send}><Icon name="send" size={18} /></button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </AdminShell>
+  );
+}
+
 
 /* ===== app.jsx ===== */
 /* ============================================================
    4iGadgets — App shell: router, state, device toggle
    ============================================================ */
-const S = { Home, Listing, Product, Cart, Checkout, Confirmation, Login, Register, Account, Support, DeliveryInfo, RefundPolicy, AdminLogin, AdminDashboard, AdminOrders, AdminCategories, AdminProducts };
+const S = { Home, Listing, Product, Cart, Checkout, Confirmation, Login, Register, Account, Support, DeliveryInfo, RefundPolicy, AdminLogin, AdminDashboard, AdminOrders, AdminCategories, AdminProducts, AdminSupport };
 
 function App({ initialRoute = 'home' }) {
   const [route, setRoute] = useState({ name: initialRoute, params: {} });
@@ -1921,7 +1996,7 @@ function App({ initialRoute = 'home' }) {
     confirmation: S.Confirmation, login: S.Login, register: S.Register, account: S.Account, support: S.Support,
     delivery: S.DeliveryInfo, refund: S.RefundPolicy,
     'admin-login': S.AdminLogin, 'admin-dashboard': S.AdminDashboard, 'admin-orders': S.AdminOrders,
-    'admin-categories': S.AdminCategories, 'admin-products': S.AdminProducts,
+    'admin-categories': S.AdminCategories, 'admin-products': S.AdminProducts, 'admin-support': S.AdminSupport,
   }[route.name] || S.Home;
 
   // guard admin screens

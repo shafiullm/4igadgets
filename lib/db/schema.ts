@@ -102,18 +102,24 @@ export const orderItems = sqliteTable("order_items", {
   priceAtPurchase: integer("price_at_purchase").notNull(),
 });
 
-// ---- Support messages ----
+// ---- Support chat ----
+// One row per message in a customer<->admin conversation. The conversation is
+// keyed by userId (the customer); `sender` says who wrote each message, so the
+// thread renders as a proper two-way chat.
+export const SUPPORT_SENDERS = ["user", "admin"] as const;
 export const supportMessages = sqliteTable("support_messages", {
   id: text("id").primaryKey(),
   userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  message: text("message").notNull(),
-  reply: text("reply"), // null until an admin replies
+  sender: text("sender", { enum: SUPPORT_SENDERS }).notNull(),
+  body: text("body").notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" })
     .notNull()
     .default(sql`(unixepoch() * 1000)`),
 });
+
+export type SupportSender = (typeof SUPPORT_SENDERS)[number];
 
 // ---- Types ----
 export type User = typeof users.$inferSelect;

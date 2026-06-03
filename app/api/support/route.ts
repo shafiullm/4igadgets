@@ -1,6 +1,6 @@
 /* ============================================================
-   GET  /api/support  — current user's support thread
-   POST /api/support  — send a message to the shop (logged-in only)
+   GET  /api/support  — the logged-in customer's chat thread
+   POST /api/support  — customer sends a message  Body: { body }
    ============================================================ */
 import { eq, asc } from "drizzle-orm";
 import { getDb } from "@/lib/db";
@@ -14,13 +14,13 @@ export async function GET() {
     const user = await getSessionUser();
     if (!user) return unauthorized("Login to view your messages");
     const db = await getDb();
-    const msgs = await db
+    const messages = await db
       .select()
       .from(supportMessages)
       .where(eq(supportMessages.userId, user.id))
       .orderBy(asc(supportMessages.createdAt))
       .all();
-    return json({ messages: msgs });
+    return json({ messages });
   });
 }
 
@@ -28,17 +28,22 @@ export async function POST(req: Request) {
   return handle(async () => {
     const user = await getSessionUser();
     if (!user) return unauthorized("Login to message the shop");
-    const { message } = (await req.json()) as { message?: string };
-    if (!message?.trim()) return badRequest("Message cannot be empty");
+    const { body } = (await req.json()) as { body?: string };
+    if (!body?.trim()) return badRequest("Message cannot be empty");
 
     const db = await getDb();
-    const id = newId("msg");
-    await db.insert(supportMessages).values({ id, userId: user.id, message: message.trim() });
-    const created = await db
+    await db.insert(supportMessages).values({
+      id: newId("msg"),
+      userId: user.id,
+      sender: "user",
+      body: body.trim(),
+    });
+    const messages = await db
       .select()
       .from(supportMessages)
-      .where(eq(supportMessages.id, id))
-      .get();
-    return json({ message: created });
+      .where(eq(supportMessages.userId, user.id))
+      .orderBy(asc(supportMessages.createdAt))
+      .all();
+    return json({ messages });
   });
 }
