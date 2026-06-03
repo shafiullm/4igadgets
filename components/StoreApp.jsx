@@ -16,6 +16,7 @@ import React, {
   createContext,
 } from "react";
 import { createPortal } from "react-dom";
+import { ICONS, FallbackIcon } from "./icons";
 
 // ---- tiny fetch helper ----
 async function api(path, opts) {
@@ -109,10 +110,15 @@ function applyCatalog(data) {
 const Shop = createContext(null);
 const useShop = () => useContext(Shop);
 
-// ---- Icon (lucide) ----
+// ---- Icon (real React SVG via lucide-react) ----
+// Keeps `data-lucide` so the existing CSS size rules ([data-lucide]{...},
+// .stars [data-lucide], .es-ic [data-lucide], etc.) still apply, and applies
+// an inline width/height when a `size` is given (overrides the CSS), matching
+// the original prototype exactly — but without any DOM mutation.
 function Icon({ name, size, className, style }) {
+  const Cmp = ICONS[name] || FallbackIcon;
   const s = size ? { width: size, height: size } : null;
-  return <i data-lucide={name} className={'ic ' + (className || '')} style={{ ...s, ...style }} />;
+  return <Cmp data-lucide={name} className={'ic ' + (className || '')} style={{ ...s, ...style }} />;
 }
 
 // ---- Image placeholder ----
@@ -374,9 +380,6 @@ function Crumb({ items }) {
 // ---- Modal (portals to the fixed overlay host so it anchors to the frame) ----
 function Modal({ title, onClose, children, footer }) {
   const host = (typeof document !== 'undefined') && document.getElementById('overlay-host');
-  // Modal opens via local child state (App doesn't re-render), so its freshly
-  // mounted lucide icons need an explicit pass to render.
-  useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
   const content = (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -1891,23 +1894,6 @@ function App({ initialRoute = 'home' }) {
     update();
     mq.addEventListener('change', update);
     return () => mq.removeEventListener('change', update);
-  }, []);
-
-  // Render lucide icons, and keep converting any <i data-lucide> nodes that get
-  // inserted later (admin tables, modals, order lists load asynchronously). A
-  // MutationObserver fixes icons that previously stayed blank until the next
-  // re-render/interaction.
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.lucide) return;
-    const draw = () => { try { window.lucide.createIcons(); } catch { /* ignore */ } };
-    draw();
-    let raf = 0;
-    const obs = new MutationObserver(() => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => { raf = 0; draw(); });
-    });
-    obs.observe(document.body, { childList: true, subtree: true });
-    return () => { obs.disconnect(); if (raf) cancelAnimationFrame(raf); };
   }, []);
 
   // scroll to top on route change

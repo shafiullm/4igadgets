@@ -21,9 +21,6 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
-        {/* Lucide icon font/runtime (same version the prototype used). Loaded
-            synchronously so window.lucide exists before the app hydrates. */}
-        <script src="https://unpkg.com/lucide@0.544.0/dist/umd/lucide.min.js" />
       </head>
       {/* Body background + base font match the exported 4iGadgets design exactly. */}
       <body style={{ backgroundColor: "rgb(217, 212, 202)", fontFamily: "Helvetica" }}>
