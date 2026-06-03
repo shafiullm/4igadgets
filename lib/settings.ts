@@ -65,6 +65,59 @@ export function normalizeHero(input: unknown): HeroConfig {
   };
 }
 
+// ---- Marketing banner (the editable strip below the deals on the homepage) ----
+export type BannerConfig = {
+  enabled: boolean;
+  theme: "amber" | "teal" | "cream";
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  cta: string;
+  linkTo: string; // "category" | "cat:<slug>" | "deals"
+};
+
+export const BANNER_DEFAULT: BannerConfig = {
+  enabled: true,
+  theme: "amber",
+  eyebrow: "EID DHAMAKA",
+  title: "Up to 30% off across the store",
+  subtitle: "Limited-time festival deals on phones, fashion, appliances & more.",
+  cta: "Shop the sale",
+  linkTo: "deals",
+};
+
+export function normalizeBanner(input: unknown): BannerConfig {
+  const o = (input ?? {}) as Record<string, unknown>;
+  const theme = o.theme === "teal" || o.theme === "cream" ? o.theme : "amber";
+  return {
+    enabled: o.enabled !== false,
+    theme,
+    eyebrow: str(o.eyebrow, 60),
+    title: str(o.title, 120, BANNER_DEFAULT.title),
+    subtitle: str(o.subtitle, 240),
+    cta: str(o.cta, 40),
+    linkTo: str(o.linkTo, 60, "category") || "category",
+  };
+}
+
+export async function getBanner(db: Db): Promise<BannerConfig> {
+  const row = await db.select().from(siteSettings).where(eq(siteSettings.key, "banner")).get();
+  if (!row) return BANNER_DEFAULT;
+  try {
+    return normalizeBanner(JSON.parse(row.value));
+  } catch {
+    return BANNER_DEFAULT;
+  }
+}
+
+export async function setBanner(db: Db, config: BannerConfig): Promise<void> {
+  const value = JSON.stringify(config);
+  await db
+    .insert(siteSettings)
+    .values({ key: "banner", value })
+    .onConflictDoUpdate({ target: siteSettings.key, set: { value, updatedAt: new Date() } });
+}
+
 export async function getHero(db: Db): Promise<HeroConfig> {
   const row = await db.select().from(siteSettings).where(eq(siteSettings.key, "hero")).get();
   if (!row) return HERO_DEFAULT;

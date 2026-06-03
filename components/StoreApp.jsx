@@ -356,7 +356,7 @@ function MarketingBanner() {
   return (
     <section style={{ padding: '12px 0' }}>
       <div className="wrap">
-        <BannerCard banner={banner} isMobile={isMobile} onCta={() => navigate(banner.target || 'category', banner.targetParams || {})} />
+        <BannerCard banner={banner} isMobile={isMobile} onCta={() => { const [n, p] = heroTarget(banner.linkTo); navigate(n, p); }} />
       </div>
     </section>
   );
@@ -430,6 +430,17 @@ const HERO_DEFAULT = {
     { value: '4.8★', label: 'avg. rating' },
     { value: '64', label: 'districts served' },
   ],
+};
+
+// Mirrors BANNER_DEFAULT in lib/settings.ts.
+const BANNER_DEFAULT = {
+  enabled: true,
+  theme: 'amber',
+  eyebrow: 'EID DHAMAKA',
+  title: 'Up to 30% off across the store',
+  subtitle: 'Limited-time festival deals on phones, fashion, appliances & more.',
+  cta: 'Shop the sale',
+  linkTo: 'deals',
 };
 
 function heroTarget(link) {
@@ -1509,8 +1520,13 @@ function AdminDashboard() {
 
 // ---- Homepage marketing banner manager ----
 function BannerManager() {
-  const { banner, setBanner, isMobile } = useShop();
+  const { banner, reloadCatalog, toast, isMobile } = useShop();
   const [edit, setEdit] = useState(false);
+  // Persist the visibility toggle so the storefront actually reflects it.
+  const toggleVisible = async (enabled) => {
+    try { await api('/api/admin/banner', { method: 'PUT', body: JSON.stringify({ ...banner, enabled }) }); await reloadCatalog(); }
+    catch (e) { toast(e.message || 'Could not update banner', 'alert-triangle'); }
+  };
   return (
     <div className="tbl-card" style={{ marginTop: 20 }}>
       <div className="tbl-head">
@@ -1520,7 +1536,7 @@ function BannerManager() {
         </div>
         <div className="row gap-10">
           <label className="check" style={{ fontSize: 13, gap: 6 }}>
-            <input type="checkbox" checked={banner.enabled} onChange={e => setBanner(b => ({ ...b, enabled: e.target.checked }))} /><span>Visible</span>
+            <input type="checkbox" checked={banner.enabled} onChange={e => toggleVisible(e.target.checked)} /><span>Visible</span>
           </label>
           <button className="btn btn-primary btn-sm" onClick={() => setEdit(true)}><Icon name="pencil" size={15} /> Edit banner</button>
         </div>
@@ -1541,20 +1557,20 @@ function BannerManager() {
 }
 
 function BannerEditorModal({ onClose }) {
-  const { banner, setBanner, toast, isMobile } = useShop();
-  const [f, setF] = useState({ ...banner });
+  const { banner, reloadCatalog, toast, isMobile } = useShop();
+  const [f, setF] = useState({ ...BANNER_DEFAULT, ...banner });
   const set = (k) => (e) => setF(s => ({ ...s, [k]: e.target.value }));
   const themes = [['amber', 'Terracotta', '#E76F51'], ['teal', 'Teal', '#0F4C5C'], ['cream', 'Light', '#FAF7F2']];
   const targets = [['category', 'Shop All'], ['cat:smartphones', 'Smartphones'], ['cat:mens', "Men's Fashion"], ['cat:womens', "Women's Fashion"], ['cat:appliances', 'Appliances'], ['deals', 'Best deals']];
-  const save = () => {
-    let target = 'category', targetParams = {};
-    if (f.linkTo === 'deals') { target = 'category'; targetParams = { sort: 'discount' }; }
-    else if ((f.linkTo || '').startsWith('cat:')) { target = 'category'; targetParams = { cat: f.linkTo.slice(4) }; }
-    setBanner({ ...f, target, targetParams });
-    toast('Banner updated — now live on the homepage', 'check-circle-2');
-    onClose();
+  const save = async () => {
+    try {
+      await api('/api/admin/banner', { method: 'PUT', body: JSON.stringify(f) });
+      await reloadCatalog();
+      toast('Banner updated — now live on the homepage', 'check-circle-2');
+      onClose();
+    } catch (e) { toast(e.message || 'Could not save banner', 'alert-triangle'); }
   };
-  const currentLink = f.linkTo || (banner.targetParams && banner.targetParams.sort === 'discount' ? 'deals' : banner.targetParams && banner.targetParams.cat ? 'cat:' + banner.targetParams.cat : 'category');
+  const currentLink = f.linkTo || 'deals';
 
   return (
     <Modal title="Edit homepage banner" onClose={onClose}
@@ -2004,16 +2020,7 @@ function App({ initialRoute = 'home' }) {
   const [isMobile, setIsMobile] = useState(false);
   const [adminCollapsed, setAdminCollapsed] = useState(false);
   const [heroConfig, setHeroConfig] = useState(HERO_DEFAULT);
-  const [banner, setBanner] = useState({
-    enabled: true,
-    theme: 'amber',
-    eyebrow: 'EID DHAMAKA',
-    title: 'Up to 30% off across the store',
-    subtitle: 'Limited-time festival deals on phones, fashion, appliances & more.',
-    cta: 'Shop the sale',
-    target: 'category',
-    targetParams: { sort: 'discount' },
-  });
+  const [banner, setBanner] = useState(BANNER_DEFAULT);
   const [lastOrder, setLastOrder] = useState(null);
   const [toasts, setToasts] = useState([]);
   const [loaded, setLoaded] = useState(false);
@@ -2039,6 +2046,7 @@ function App({ initialRoute = 'home' }) {
     const data = await api('/api/catalog');
     applyCatalog(data);
     if (data.hero) setHeroConfig(data.hero);
+    if (data.banner) setBanner(data.banner);
     setCatalogVersion((v) => v + 1);
   };
   useEffect(() => {
