@@ -24,7 +24,6 @@
     "react-dom": "19.2.7"
   },
   "optionalDependencies": {
-    "//": "Platform binary for workerd (local preview). npm auto-selects the right one per OS; pinned here for Linux CI.",
     "@cloudflare/workerd-linux-64": "^1.20260602.1"
   },
   "devDependencies": {

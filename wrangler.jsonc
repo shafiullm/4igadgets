@@ -9,10 +9,10 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
     "binding": "ASSETS",
-    "directory": ".open-next/assets"
+    "directory": ".open-next/assets",
   },
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
   // ---- Cloudflare D1 (SQLite) ----
   // Run `wrangler d1 create 4igadgets-db` and paste the returned database_id below.
@@ -20,10 +20,10 @@
     {
       "binding": "DB",
       "database_name": "4igadgets-db",
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
-      "migrations_dir": "drizzle/migrations"
-    }
-  ]
+      "database_id": "54cbb71b-a557-4915-99d4-8860cde664fd",
+      "migrations_dir": "drizzle/migrations",
+    },
+  ],
   // Secrets (ADMIN_EMAIL, ADMIN_PASSWORD, AUTH_SECRET, payment numbers) are NOT set
   // here. Use `wrangler secret put <NAME>` for production and `.dev.vars` for local.
 }
