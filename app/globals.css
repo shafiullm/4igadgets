@@ -574,3 +574,26 @@ table.tbl tr:hover td{background:var(--cream);}
 .theme-swatch.on{border-color:var(--ink);box-shadow:0 0 0 3px var(--cream-2);}
 .theme-swatch .chk{position:absolute;top:5px;right:6px;}
 .banner-preview-label{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;}
+
+/* ============================================================
+   PRODUCTION LAYOUT — real full-window site (replaces the
+   prototype's presenter frame / device mockup). The interactive
+   app mounts inside .app-root; the .mobile class is toggled by
+   viewport width so all existing ".mobile ..." styles apply.
+   ============================================================ */
+.app-root{min-height:100vh;background:var(--cream);}
+.app-root .admin{min-height:100vh;}
+.app-root .admin-side{position:sticky;top:0;height:100vh;align-self:start;}
+.app-root .auth-wrap{min-height:100vh;}
+
+/* Modals portal into a fixed, click-through host; the overlay itself
+   re-enables pointer events so the backdrop + dialog work as before. */
+#overlay-host{position:fixed;inset:0;z-index:80;pointer-events:none;}
+#overlay-host .modal-overlay{position:fixed;pointer-events:auto;}
+
+/* Toasts float fixed at the bottom of the viewport. */
+.toast-wrap{position:fixed;}
+
+/* On real mobile widths the sticky admin sidebar is hidden anyway
+   (.mobile .admin-side{display:none}); keep content full-width. */
+.app-root.mobile .admin{grid-template-columns:1fr;}

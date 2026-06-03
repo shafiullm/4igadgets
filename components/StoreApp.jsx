@@ -1783,14 +1783,14 @@ function ProductFormModal({ p, onClose, onSave }) {
    ============================================================ */
 const S = { Home, Listing, Product, Cart, Checkout, Confirmation, Login, Register, Account, Support, DeliveryInfo, RefundPolicy, AdminLogin, AdminDashboard, AdminOrders, AdminCategories, AdminProducts };
 
-function App() {
-  const [route, setRoute] = useState({ name: 'home', params: {} });
+function App({ initialRoute = 'home' }) {
+  const [route, setRoute] = useState({ name: initialRoute, params: {} });
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
   const [admin, setAdmin] = useState(false);
-  const [view, setView] = useState('desktop'); // desktop | mobile
+  const [isMobile, setIsMobile] = useState(false);
   const [adminCollapsed, setAdminCollapsed] = useState(false);
-  const [hero, setHero] = useState('B');
+  const [hero] = useState('B');
   const [banner, setBanner] = useState({
     enabled: true,
     theme: 'amber',
@@ -1807,15 +1807,36 @@ function App() {
   const [myOrders, setMyOrders] = useState([]);
   const [adminOrders, setAdminOrders] = useState([]);
   const [catalogVersion, setCatalogVersion] = useState(0);
-  const scrollRef = useRef(null);
 
-  const isMobile = view === 'mobile';
+  // Responsive: drive the mobile layout from the real viewport width
+  // (reuses all the prototype's existing `.mobile ...` styles).
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
-  // re-render lucide icons after every paint
-  useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
+  // Render lucide icons, and keep converting any <i data-lucide> nodes that get
+  // inserted later (admin tables, modals, order lists load asynchronously). A
+  // MutationObserver fixes icons that previously stayed blank until the next
+  // re-render/interaction.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.lucide) return;
+    const draw = () => { try { window.lucide.createIcons(); } catch { /* ignore */ } };
+    draw();
+    let raf = 0;
+    const obs = new MutationObserver(() => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => { raf = 0; draw(); });
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+    return () => { obs.disconnect(); if (raf) cancelAnimationFrame(raf); };
+  }, []);
 
   // scroll to top on route change
-  useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0; }, [route]);
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [route]);
 
   // initial hydrate: catalog + any existing sessions
   const reloadCatalog = async () => {
@@ -1908,43 +1929,17 @@ function App() {
 
   return (
     <Shop.Provider value={ctx}>
-      <div className="presenter">
-        <div className="presenter-bar">
-          <div className="pb-brand">4i<b>Gadgets</b><span className="dot">.</span> <span style={{ fontWeight: 500, color: '#9fb4b8', fontSize: 12, marginLeft: 6 }}>Prototype</span></div>
-          <div className="seg" style={{ marginLeft: 8 }}>
-            <button className={!isAdmin ? 'on' : ''} onClick={() => navigate('home')}><Icon name="store" size={14} /> Storefront</button>
-            <button className={isAdmin ? 'on' : ''} onClick={() => navigate(admin ? 'admin-dashboard' : 'admin-login')}><Icon name="shield" size={14} /> Admin</button>
+      <div className={'app-root' + (isMobile ? ' mobile' : '')}>
+        {loaded ? <Guarded /> : (
+          <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, color: 'var(--muted)' }}>
+            <div className="logo" style={{ fontSize: 26 }}>4i<span className="g">Gadgets</span></div>
+            <div style={{ fontSize: 13 }}>Loading store…</div>
           </div>
-          <div className="pb-spacer" />
-          {route.name === 'home' && !isMobile && (
-            <div className="pb-note">
-              <Icon name="palette" size={14} /> Hero:
-              <div className="seg" style={{ background: 'rgba(255,255,255,.08)' }}>
-                {['A', 'B', 'C'].map(h => <button key={h} className={hero === h ? 'on' : ''} onClick={() => setHero(h)}>{h}</button>)}
-              </div>
-            </div>
-          )}
-          <div className="seg">
-            <button className={view === 'desktop' ? 'on' : ''} onClick={() => setView('desktop')}><Icon name="monitor" size={14} /> Desktop</button>
-            <button className={view === 'mobile' ? 'on' : ''} onClick={() => setView('mobile')}><Icon name="smartphone" size={14} /> Mobile</button>
-          </div>
-        </div>
-        <div className="stage">
-          <div className={'viewport ' + view} key={view}>
-            {isMobile && <div className="notch" />}
-            <div className="scroll" ref={scrollRef}>
-              {loaded ? <Guarded /> : (
-                <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, color: 'var(--muted)' }}>
-                  <div className="logo" style={{ fontSize: 26 }}>4i<span className="g">Gadgets</span></div>
-                  <div style={{ fontSize: 13 }}>Loading store…</div>
-                </div>
-              )}
-            </div>
-            <div id="overlay-host" />
-            <div className="toast-wrap">
-              {toasts.map(t => <div className="toast" key={t.id}>{t.icon && <Icon name={t.icon} size={16} className="ic" />}{t.msg}</div>)}
-            </div>
-          </div>
+        )}
+        {/* Modals portal here; toasts float above everything. */}
+        <div id="overlay-host" />
+        <div className="toast-wrap">
+          {toasts.map(t => <div className="toast" key={t.id}>{t.icon && <Icon name={t.icon} size={16} className="ic" />}{t.msg}</div>)}
         </div>
       </div>
     </Shop.Provider>
