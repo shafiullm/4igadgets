@@ -1,0 +1,16 @@
+# Local development secrets for `next dev` and `opennextjs-cloudflare preview`.
+# Copy this file to `.dev.vars` (which is gitignored) and fill in real values.
+# In production these are set with `wrangler secret put <NAME>` or in the
+# Cloudflare dashboard (Workers & Pages -> your worker -> Settings -> Variables).
+
+# Secret used to sign session JWTs (HS256, Web Crypto). Use a long random string.
+# Generate one with:  openssl rand -base64 48
+AUTH_SECRET="dev-only-change-me-to-a-long-random-string"
+
+# Admin panel credentials (separate from customer accounts).
+ADMIN_EMAIL="admin@4igadgets.bd"
+ADMIN_PASSWORD="admin1234"
+
+# Manual payment numbers shown to customers at checkout (merchant numbers).
+BKASH_NUMBER="01777-000111"
+NAGAD_NUMBER="01888-000222"

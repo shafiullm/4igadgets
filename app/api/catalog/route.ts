@@ -1,0 +1,27 @@
+/* GET /api/catalog — all categories + products in UI shape. */
+import { getDb } from "@/lib/db";
+import { categories, products } from "@/lib/db/schema";
+import { serializeCategory, serializeProduct } from "@/lib/serialize";
+import { handle, json } from "@/lib/api";
+
+export async function GET() {
+  return handle(async () => {
+    const db = await getDb();
+    const cats = await db.select().from(categories).all();
+    const prods = await db.select().from(products).all();
+
+    const slugById = new Map(cats.map((c) => [c.id, c.slug]));
+    const countBySlug = new Map<string, number>();
+    for (const p of prods) {
+      const slug = slugById.get(p.categoryId);
+      if (slug) countBySlug.set(slug, (countBySlug.get(slug) ?? 0) + 1);
+    }
+
+    return json({
+      categories: cats.map((c) => serializeCategory(c, countBySlug.get(c.slug) ?? 0)),
+      products: prods.map((p) =>
+        serializeProduct(p, slugById.get(p.categoryId) ?? ""),
+      ),
+    });
+  });
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "4igadgets",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-03-25",
+  // nodejs_compat: required by OpenNext/Next.js on Workers.
+  // global_fetch_strictly_public: recommended by OpenNext so server fetches to your
+  // own routes resolve over the public internet rather than looping internally.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".open-next/assets"
+  },
+  "observability": {
+    "enabled": true
+  },
+  // ---- Cloudflare D1 (SQLite) ----
+  // Run `wrangler d1 create 4igadgets-db` and paste the returned database_id below.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "4igadgets-db",
+      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "migrations_dir": "drizzle/migrations"
+    }
+  ]
+  // Secrets (ADMIN_EMAIL, ADMIN_PASSWORD, AUTH_SECRET, payment numbers) are NOT set
+  // here. Use `wrangler secret put <NAME>` for production and `.dev.vars` for local.
+}

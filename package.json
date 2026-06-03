@@ -1,0 +1,39 @@
+{
+  "name": "4igadgets",
+  "version": "1.0.0",
+  "private": true,
+  "description": "4iGadgets — Bangladeshi e-commerce store on Next.js + Cloudflare Workers (D1)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply 4igadgets-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply 4igadgets-db --remote",
+    "db:seed:local": "wrangler d1 execute 4igadgets-db --local --file=./drizzle/seed.sql",
+    "db:seed:remote": "wrangler d1 execute 4igadgets-db --remote --file=./drizzle/seed.sql"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "next": "15.5.19",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "optionalDependencies": {
+    "//": "Platform binary for workerd (local preview). npm auto-selects the right one per OS; pinned here for Linux CI.",
+    "@cloudflare/workerd-linux-64": "^1.20260602.1"
+  },
+  "devDependencies": {
+    "@opennextjs/cloudflare": "^1.19.11",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.2.16",
+    "@types/react-dom": "^19.2.2",
+    "drizzle-kit": "^0.31.10",
+    "typescript": "^5.7.3",
+    "wrangler": "^4.97.0"
+  }
+}
