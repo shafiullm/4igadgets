@@ -2,6 +2,7 @@
 import { getDb } from "@/lib/db";
 import { categories, products } from "@/lib/db/schema";
 import { serializeCategory, serializeProduct } from "@/lib/serialize";
+import { getHero } from "@/lib/settings";
 import { handle, json } from "@/lib/api";
 
 export async function GET() {
@@ -9,6 +10,7 @@ export async function GET() {
     const db = await getDb();
     const cats = await db.select().from(categories).all();
     const prods = await db.select().from(products).all();
+    const hero = await getHero(db);
 
     const slugById = new Map(cats.map((c) => [c.id, c.slug]));
     const countBySlug = new Map<string, number>();
@@ -22,6 +24,7 @@ export async function GET() {
       products: prods.map((p) =>
         serializeProduct(p, slugById.get(p.categoryId) ?? ""),
       ),
+      hero,
     });
   });
 }

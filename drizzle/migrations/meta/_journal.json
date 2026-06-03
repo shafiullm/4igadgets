@@ -15,6 +15,13 @@
       "when": 1780480209823,
       "tag": "0001_support_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1780499379882,
+      "tag": "0002_site_settings",
+      "breakpoints": true
     }
   ]
 }

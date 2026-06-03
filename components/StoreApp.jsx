@@ -414,67 +414,99 @@ function CustomerShell({ children }) {
    4iGadgets — Customer screens
    ============================================================ */
 
-// ---------- HERO variants ----------
-function HeroA() {
+// ---------- HERO (admin-editable: layout A/B/C + content + image) ----------
+// Mirrors HERO_DEFAULT in lib/settings.ts so first paint matches the server.
+const HERO_DEFAULT = {
+  layout: 'B',
+  eyebrow: 'New arrivals weekly',
+  title: 'Everything you need,',
+  titleAccent: 'without the worry.',
+  subtitle: 'Phones, fashion, shoes, appliances & home essentials. Every order is checked, packed with care, and delivered to your door across Bangladesh.',
+  ctaText: 'Start shopping',
+  ctaLink: 'category',
+  imageUrl: '',
+  stats: [
+    { value: '50k+', label: 'happy customers' },
+    { value: '4.8★', label: 'avg. rating' },
+    { value: '64', label: 'districts served' },
+  ],
+};
+
+function heroTarget(link) {
+  if (link === 'deals') return ['category', { sort: 'discount' }];
+  if (link && link.indexOf('cat:') === 0) return ['category', { cat: link.slice(4) }];
+  return [link || 'category', {}];
+}
+function HeroLines({ text }) {
+  return (text || '').split('\n').map((ln, i) => <React.Fragment key={i}>{i > 0 && <br />}{ln}</React.Fragment>);
+}
+function HeroImage({ cfg, label, tint, style }) {
+  return cfg.imageUrl
+    ? <img src={cfg.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', ...style }} />
+    : <Thumb label={label} tint={tint} style={{ height: '100%', ...style }} />;
+}
+
+function Hero({ cfg }) {
   const { navigate } = useShop();
-  return (
-    <div className="hero-a">
-      <div>
-        <span className="hero-eyebrow"><span className="dot" /> Eid Dhamaka · up to 30% off</span>
-        <h1>Gadgets you can<br />trust, delivered<br />to your door.</h1>
-        <p>Genuine, warranty-backed tech at honest prices. Pay with bKash, Nagad, or cash on delivery, anywhere in Bangladesh.</p>
-        <div className="row gap-12" style={{ flexWrap: 'wrap' }}>
-          <button className="btn btn-accent btn-lg" onClick={() => navigate('category')}>Shop deals <Icon name="arrow-right" size={17} /></button>
-          <button className="btn btn-lg" style={{ background: 'rgba(255,255,255,.12)', color: '#fff' }} onClick={() => navigate('category', { cat: 'smartphones' })}>Browse phones</button>
+  const c = cfg || HERO_DEFAULT;
+  const go = () => { const [n, p] = heroTarget(c.ctaLink); navigate(n, p); };
+
+  if (c.layout === 'A') {
+    return (
+      <div className="hero-a">
+        <div>
+          {c.eyebrow && <span className="hero-eyebrow"><span className="dot" /> {c.eyebrow}</span>}
+          <h1><HeroLines text={c.title} />{c.titleAccent ? <> {c.titleAccent}</> : null}</h1>
+          {c.subtitle && <p>{c.subtitle}</p>}
+          <div className="row gap-12" style={{ flexWrap: 'wrap' }}>
+            {c.ctaText && <button className="btn btn-accent btn-lg" onClick={go}>{c.ctaText} <Icon name="arrow-right" size={17} /></button>}
+            <button className="btn btn-lg" style={{ background: 'rgba(255,255,255,.12)', color: '#fff' }} onClick={() => navigate('category', { cat: 'smartphones' })}>Browse phones</button>
+          </div>
+          {c.stats && c.stats.length > 0 && (
+            <div className="hero-stat-row">
+              {c.stats.map((s, i) => <div className="hero-stat" key={i}><b>{s.value}</b><span>{s.label}</span></div>)}
+            </div>
+          )}
         </div>
-        <div className="hero-stat-row">
-          <div className="hero-stat"><b>50k+</b><span>happy customers</span></div>
-          <div className="hero-stat"><b>4.8★</b><span>avg. rating</span></div>
-          <div className="hero-stat"><b>64</b><span>districts served</span></div>
+        <div className="hero-visual"><HeroImage cfg={c} label="hero product shot" style={{ borderRadius: 18 }} /></div>
+      </div>
+    );
+  }
+  if (c.layout === 'C') {
+    return (
+      <div className="hero-c">
+        <div className="blob" style={{ width: 280, height: 280, background: '#1c7a8c', top: -80, right: -40 }} />
+        <div className="blob" style={{ width: 180, height: 180, background: '#E76F51', bottom: -70, right: 180, opacity: .35 }} />
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          {c.eyebrow && <span className="hero-eyebrow"><span className="dot" /> {c.eyebrow}</span>}
+          <h1><HeroLines text={c.title} />{c.titleAccent ? <> {c.titleAccent}</> : null}</h1>
+          {c.subtitle && <p>{c.subtitle}</p>}
+          {c.ctaText && <button className="btn btn-accent btn-lg" onClick={go}>{c.ctaText} <Icon name="arrow-right" size={17} /></button>}
         </div>
       </div>
-      <div className="hero-visual"><Thumb label="hero product shot" style={{ height: '100%', borderRadius: 18 }} /></div>
-    </div>
-  );
-}
-function HeroB() {
-  const { navigate } = useShop();
+    );
+  }
+  // layout B (default)
   return (
     <div className="hero-b">
       <div className="hb-copy">
-        <span className="hero-eyebrow" style={{ background: 'var(--amber-50)', color: 'var(--amber-600)', alignSelf: 'flex-start' }}><span className="dot" /> New arrivals weekly</span>
-        <h1>Everything you need, <em>without the worry.</em></h1>
-        <p>Phones, fashion, shoes, appliances & home essentials. Every order is checked, packed with care, and delivered to your door across Bangladesh.</p>
+        {c.eyebrow && <span className="hero-eyebrow" style={{ background: 'var(--amber-50)', color: 'var(--amber-600)', alignSelf: 'flex-start' }}><span className="dot" /> {c.eyebrow}</span>}
+        <h1><HeroLines text={c.title} />{c.titleAccent ? <> <em>{c.titleAccent}</em></> : null}</h1>
+        {c.subtitle && <p>{c.subtitle}</p>}
         <div className="row gap-12" style={{ flexWrap: 'wrap' }}>
-          <button className="btn btn-primary btn-lg" onClick={() => navigate('category')}>Start shopping <Icon name="arrow-right" size={17} /></button>
+          {c.ctaText && <button className="btn btn-primary btn-lg" onClick={go}>{c.ctaText} <Icon name="arrow-right" size={17} /></button>}
           <button className="btn btn-ghost btn-lg" onClick={() => navigate('support')}>Talk to us</button>
         </div>
       </div>
-      <div className="hb-visual"><Thumb label="lifestyle hero shot" tint="b" style={{ height: '100%' }} /></div>
-    </div>
-  );
-}
-function HeroC() {
-  const { navigate } = useShop();
-  return (
-    <div className="hero-c">
-      <div className="blob" style={{ width: 280, height: 280, background: '#1c7a8c', top: -80, right: -40 }} />
-      <div className="blob" style={{ width: 180, height: 180, background: '#E76F51', bottom: -70, right: 180, opacity: .35 }} />
-      <div style={{ position: 'relative', zIndex: 2 }}>
-        <span className="hero-eyebrow"><span className="dot" /> Trusted since 2026</span>
-        <h1>Big tech energy.<br />Small, friendly prices.</h1>
-        <p>Shop phones, laptops & audio with free Dhaka delivery and easy 7-day replacement.</p>
-        <button className="btn btn-accent btn-lg" onClick={() => navigate('category')}>Explore the shop <Icon name="arrow-right" size={17} /></button>
-      </div>
+      <div className="hb-visual"><HeroImage cfg={c} label="lifestyle hero shot" tint="b" /></div>
     </div>
   );
 }
 
 function Home() {
-  const { navigate, hero, isMobile } = useShop();
+  const { navigate, heroConfig, isMobile } = useShop();
   const featured = G.featuredIds.map(G.byId);
   const deals = G.dealIds.map(G.byId).slice(0, isMobile ? 4 : 5);
-  const Hero = hero === 'B' ? HeroB : hero === 'C' ? HeroC : HeroA;
   const trust = [
     ['truck', 'Free delivery', 'On orders over ৳2,000', 'var(--teal-50)', 'var(--teal)'],
     ['shield-check', '1-year warranty', 'Official, genuine units', 'var(--amber-50)', 'var(--amber-600)'],
@@ -483,7 +515,7 @@ function Home() {
   ];
   return (
     <CustomerShell>
-      <div className="wrap" style={{ paddingTop: 24 }}><Hero /></div>
+      <div className="wrap" style={{ paddingTop: 24 }}><Hero cfg={heroConfig} /></div>
 
       <section className="section" style={{ paddingTop: 30 }}>
         <div className="wrap">
@@ -1469,6 +1501,7 @@ function AdminDashboard() {
         </div>
       </div>
 
+      <HeroManager />
       <BannerManager />
     </AdminShell>
   );
@@ -1553,6 +1586,99 @@ function BannerEditorModal({ onClose }) {
           </select>
         </Field>
       </div>
+    </Modal>
+  );
+}
+
+// ---- Homepage hero manager (edit layout, copy, image, stats) ----
+function HeroManager() {
+  const { heroConfig, isMobile } = useShop();
+  const [edit, setEdit] = useState(false);
+  return (
+    <div className="tbl-card" style={{ marginTop: 20 }}>
+      <div className="tbl-head">
+        <div className="row gap-10">
+          <div className="kpi-ic" style={{ width: 38, height: 38, margin: 0, borderRadius: 10, background: 'var(--teal-50)', color: 'var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="image" size={19} /></div>
+          <div><h3>Homepage hero</h3><div className="muted" style={{ fontSize: 12 }}>The big banner at the top of the storefront homepage</div></div>
+        </div>
+        <button className="btn btn-primary btn-sm" onClick={() => setEdit(true)}><Icon name="pencil" size={15} /> Edit hero</button>
+      </div>
+      <div style={{ padding: isMobile ? 16 : 24 }}>
+        <div style={{ pointerEvents: 'none' }}><Hero cfg={heroConfig} /></div>
+      </div>
+      {edit && <HeroEditorModal onClose={() => setEdit(false)} />}
+    </div>
+  );
+}
+
+function HeroEditorModal({ onClose }) {
+  const { heroConfig, reloadCatalog, toast, isMobile } = useShop();
+  const [f, setF] = useState({ ...HERO_DEFAULT, ...heroConfig, stats: (heroConfig.stats || HERO_DEFAULT.stats).map(s => ({ ...s })) });
+  const set = (k) => (e) => setF(s => ({ ...s, [k]: e.target.value }));
+  const setStat = (i, key) => (e) => setF(s => ({ ...s, stats: s.stats.map((x, xi) => xi === i ? { ...x, [key]: e.target.value } : x) }));
+  const layouts = [['A', 'Image + stats'], ['B', 'Split panel'], ['C', 'Full-width banner']];
+  const targets = [['category', 'Shop All'], ['cat:smartphones', 'Smartphones'], ['cat:mens', "Men's Fashion"], ['cat:womens', "Women's Fashion"], ['cat:appliances', 'Appliances'], ['deals', 'Best deals']];
+
+  const save = async () => {
+    try {
+      await api('/api/admin/hero', { method: 'PUT', body: JSON.stringify(f) });
+      await reloadCatalog();
+      toast('Homepage hero updated — now live', 'check-circle-2');
+      onClose();
+    } catch (e) { toast(e.message || 'Could not save hero', 'alert-triangle'); }
+  };
+
+  return (
+    <Modal title="Edit homepage hero" onClose={onClose}
+      footer={<><button className="btn btn-ghost" onClick={onClose}>Cancel</button><button className="btn btn-primary" onClick={save}><Icon name="check" size={16} /> Save & publish</button></>}>
+      <div className="banner-preview-label">Live preview</div>
+      <div style={{ marginBottom: 22, pointerEvents: 'none' }}><Hero cfg={f} /></div>
+
+      <Field label="Layout">
+        <div className="chips">
+          {layouts.map(([id, name]) => (
+            <span key={id} className={'chip' + (f.layout === id ? ' on' : '')} onClick={() => setF(s => ({ ...s, layout: id }))}>{name}</span>
+          ))}
+        </div>
+      </Field>
+      <div style={{ height: 16 }} />
+      <Field label="Eyebrow (small label)"><input className="inp" value={f.eyebrow} onChange={set('eyebrow')} placeholder="e.g. New arrivals weekly" /></Field>
+      <div style={{ height: 16 }} />
+      <div className="banner-editor-grid">
+        <Field label="Headline" hint="Use Enter for a line break"><textarea className="inp" value={f.title} onChange={set('title')} placeholder="Main headline" style={{ minHeight: 64 }} /></Field>
+        <Field label="Highlighted tail" hint="Shown emphasized after the headline"><input className="inp" value={f.titleAccent} onChange={set('titleAccent')} placeholder="e.g. without the worry." /></Field>
+      </div>
+      <div style={{ height: 16 }} />
+      <Field label="Subtitle"><textarea className="inp" value={f.subtitle} onChange={set('subtitle')} placeholder="Supporting paragraph" style={{ minHeight: 70 }} /></Field>
+      <div style={{ height: 16 }} />
+      <div className="banner-editor-grid">
+        <Field label="Button text" hint="Leave empty to hide the button"><input className="inp" value={f.ctaText} onChange={set('ctaText')} placeholder="e.g. Start shopping" /></Field>
+        <Field label="Button links to">
+          <select className="sel" value={f.ctaLink} onChange={set('ctaLink')}>
+            {targets.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </Field>
+      </div>
+      <div style={{ height: 16 }} />
+      {/* Image is a URL for now (no paid storage). Cloudflare R2 could back uploads later. */}
+      <Field label="Hero image URL" hint="Used by the 'Image + stats' and 'Split panel' layouts. Leave empty for the styled placeholder.">
+        <input className="inp" value={f.imageUrl} onChange={set('imageUrl')} placeholder="https://…/hero.jpg" />
+      </Field>
+      {f.layout === 'A' && (
+        <>
+          <div style={{ height: 16 }} />
+          <Field label="Stats (shown on the 'Image + stats' layout)">
+            <div style={{ display: 'grid', gap: 10 }}>
+              {f.stats.map((s, i) => (
+                <div key={i} className="row gap-10">
+                  <input className="inp" value={s.value} onChange={setStat(i, 'value')} placeholder="e.g. 50k+" style={{ flex: '0 0 110px' }} />
+                  <input className="inp" value={s.label} onChange={setStat(i, 'label')} placeholder="e.g. happy customers" />
+                </div>
+              ))}
+            </div>
+          </Field>
+        </>
+      )}
     </Modal>
   );
 }
@@ -1877,7 +2003,7 @@ function App({ initialRoute = 'home' }) {
   const [admin, setAdmin] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [adminCollapsed, setAdminCollapsed] = useState(false);
-  const [hero] = useState('B');
+  const [heroConfig, setHeroConfig] = useState(HERO_DEFAULT);
   const [banner, setBanner] = useState({
     enabled: true,
     theme: 'amber',
@@ -1912,6 +2038,7 @@ function App({ initialRoute = 'home' }) {
   const reloadCatalog = async () => {
     const data = await api('/api/catalog');
     applyCatalog(data);
+    if (data.hero) setHeroConfig(data.hero);
     setCatalogVersion((v) => v + 1);
   };
   useEffect(() => {
@@ -1981,7 +2108,7 @@ function App({ initialRoute = 'home' }) {
   };
 
   const ctx = { route, navigate, cart, cartCount: cart.reduce((s, c) => s + c.qty, 0), addToCart, setQty, removeFromCart,
-    user, login, register, logout, admin, loginAdmin, placeOrder, lastOrder, hero, isMobile, toast, banner, setBanner,
+    user, login, register, logout, admin, loginAdmin, placeOrder, lastOrder, heroConfig, setHeroConfig, isMobile, toast, banner, setBanner,
     adminCollapsed, setAdminCollapsed, loaded, catalogVersion, reloadCatalog,
     myOrders, refreshMyOrders, adminOrders, refreshAdminOrders };
 

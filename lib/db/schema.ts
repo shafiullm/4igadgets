@@ -121,6 +121,17 @@ export const supportMessages = sqliteTable("support_messages", {
 
 export type SupportSender = (typeof SUPPORT_SENDERS)[number];
 
+// ---- Site settings ----
+// Generic key/value store for editable site content (e.g. the homepage hero).
+// Value holds a JSON blob; parsing/defaults live in lib/settings.ts.
+export const siteSettings = sqliteTable("site_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .notNull()
+    .default(sql`(unixepoch() * 1000)`),
+});
+
 // ---- Types ----
 export type User = typeof users.$inferSelect;
 export type Category = typeof categories.$inferSelect;
