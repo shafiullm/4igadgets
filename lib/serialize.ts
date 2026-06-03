@@ -128,14 +128,19 @@ export type UiProduct = {
   // synthesized, presentational only:
   brand: string;
   tint: "a" | "b";
-  rating: number;
-  reviews: number;
+  rating: number; // real average (0 when no reviews)
+  reviews: number; // real review count
   features: string[];
 };
 
-export function serializeProduct(p: Product, categorySlug: string): UiProduct {
+/** `rating` (avg) and `reviewCount` come from the reviews table; 0/0 = unrated. */
+export function serializeProduct(
+  p: Product,
+  categorySlug: string,
+  rating = 0,
+  reviewCount = 0,
+): UiProduct {
   const group = GROUP_BY_SLUG[categorySlug] ?? "tech";
-  const ratingTenths = hashNum(p.id, 41, 49); // 4.1 - 4.9
   return {
     id: p.id,
     name: p.name,
@@ -148,8 +153,8 @@ export function serializeProduct(p: Product, categorySlug: string): UiProduct {
     imageUrl: p.imageUrl,
     brand: p.name.split(" ")[0],
     tint: hashNum(p.id, 0, 1) === 0 ? "a" : "b",
-    rating: ratingTenths / 10,
-    reviews: hashNum(p.id, 40, 900),
+    rating: Math.round(rating * 10) / 10,
+    reviews: reviewCount,
     features: FEATURES[group] ?? FEATURES.tech,
   };
 }

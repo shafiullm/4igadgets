@@ -1,7 +1,7 @@
 /* ============================================================
    4iGadgets — Drizzle schema (SQLite / Cloudflare D1)
    ============================================================ */
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 /** Helper: cuid-ish id default generated in app code (see lib/db/id.ts). */
@@ -121,6 +121,44 @@ export const supportMessages = sqliteTable("support_messages", {
 
 export type SupportSender = (typeof SUPPORT_SENDERS)[number];
 
+// ---- Favourites (wishlist) — one row per (user, product) ----
+export const favourites = sqliteTable(
+  "favourites",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    productId: text("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => [uniqueIndex("favourites_user_product").on(t.userId, t.productId)],
+);
+
+// ---- Reviews / ratings — one review per (user, product) ----
+export const reviews = sqliteTable(
+  "reviews",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    productId: text("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    rating: integer("rating").notNull(), // 1..5
+    comment: text("comment"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (t) => [uniqueIndex("reviews_user_product").on(t.userId, t.productId)],
+);
+
 // ---- Site settings ----
 // Generic key/value store for editable site content (e.g. the homepage hero).
 // Value holds a JSON blob; parsing/defaults live in lib/settings.ts.
@@ -139,6 +177,8 @@ export type Product = typeof products.$inferSelect;
 export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type SupportMessage = typeof supportMessages.$inferSelect;
+export type Favourite = typeof favourites.$inferSelect;
+export type Review = typeof reviews.$inferSelect;
 
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];

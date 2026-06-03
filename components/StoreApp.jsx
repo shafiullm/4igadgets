@@ -158,16 +158,25 @@ function PayBadge({ status }) {
   const m = G.payMeta[status]; return <Badge kind={m.cls}>{m.label}</Badge>;
 }
 
+// ---- Rating summary text (handles the "no reviews yet" case) ----
+function RatingText({ p }) {
+  if (!p.reviews) return <span className="pc-rate"><Stars rating={0} /><span>No ratings yet</span></span>;
+  return <span className="pc-rate"><Stars rating={p.rating} /><span>{p.rating.toFixed(1)} · {p.reviews}</span></span>;
+}
+
 // ---- Product card ----
 function ProductCard({ p }) {
-  const { navigate, addToCart } = useShop();
+  const { navigate, addToCart, favIds, toggleFav } = useShop();
   const price = G.priceOf(p);
   const off = p.disc && p.disc > 0 ? Math.round((1 - p.disc / p.price) * 100) : 0;
+  const liked = favIds.includes(p.id);
   return (
     <div className="pcard fade-in" onClick={() => navigate('product', { id: p.id })}>
       <div className="pc-img">
         {off > 0 && <span className="sale-tag">-{off}%</span>}
-        <button className="pc-fav" onClick={(e) => { e.stopPropagation(); }}><Icon name="heart" size={16} /></button>
+        <button className="pc-fav" title={liked ? 'Remove from favourites' : 'Save to favourites'} onClick={(e) => { e.stopPropagation(); toggleFav(p.id); }}>
+          <Icon name="heart" size={16} style={liked ? { fill: '#E76F51', color: '#E76F51' } : null} />
+        </button>
         {p.imageUrl
           ? <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <Thumb label={p.brand + ' shot'} tint={p.tint} style={{ height: '100%' }} />}
@@ -175,7 +184,7 @@ function ProductCard({ p }) {
       <div className="pc-body">
         <div className="pc-cat">{G.catName(p.cat)}</div>
         <div className="pc-name">{p.name}</div>
-        <div className="pc-rate"><Stars rating={p.rating} /><span>{p.rating} · {p.reviews}</span></div>
+        <RatingText p={p} />
         <div className="pc-price">
           <span className="now"><Tk>{price}</Tk></span>
           {off > 0 && <span className="was"><Tk>{p.price}</Tk></span>}
@@ -671,14 +680,53 @@ function Listing() {
 }
 
 // ---------- Product detail ----------
+// ---- Interactive star rating input ----
+function StarInput({ value, onChange }) {
+  const [hover, setHover] = useState(0);
+  const cur = hover || value;
+  return (
+    <span style={{ display: 'inline-flex', gap: 3, cursor: 'pointer' }} onMouseLeave={() => setHover(0)}>
+      {[1, 2, 3, 4, 5].map(i => (
+        <span key={i} onMouseEnter={() => setHover(i)} onClick={() => onChange(i)}>
+          <Icon name="star" size={26} style={{ fill: i <= cur ? '#E76F51' : 'none', color: i <= cur ? '#E76F51' : '#d8d2c6' }} />
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function Product() {
-  const { route, navigate, addToCart, isMobile } = useShop();
+  const { route, navigate, addToCart, isMobile, user, favIds, toggleFav, reloadCatalog, toast } = useShop();
   const p = G.byId(route.params.id) || G.products[0];
   const [qty, setQty] = useState(1);
   const [img, setImg] = useState(0);
+  const [data, setData] = useState({ reviews: [], myReview: null });
+  const [draftRating, setDraftRating] = useState(0);
+  const [draftComment, setDraftComment] = useState('');
   const price = G.priceOf(p);
   const off = p.disc && p.disc > 0 ? Math.round((1 - p.disc / p.price) * 100) : 0;
   const related = G.products.filter(x => x.cat === p.cat && x.id !== p.id).slice(0, isMobile ? 2 : 4);
+  const liked = favIds.includes(p.id);
+
+  const loadReviews = async () => {
+    try {
+      const r = await api('/api/products/' + p.slug);
+      setData({ reviews: r.reviews || [], myReview: r.myReview || null });
+      if (r.myReview) { setDraftRating(r.myReview.rating); setDraftComment(r.myReview.comment || ''); }
+    } catch { /* ignore */ }
+  };
+  useEffect(() => { setDraftRating(0); setDraftComment(''); loadReviews(); }, [p.id]);
+
+  const submitReview = async () => {
+    if (!user) { toast('Log in to leave a review', 'star'); navigate('login'); return; }
+    if (!draftRating) { toast('Pick a star rating first', 'alert-triangle'); return; }
+    try {
+      await api('/api/products/' + p.slug, { method: 'POST', body: JSON.stringify({ rating: draftRating, comment: draftComment }) });
+      await loadReviews();
+      await reloadCatalog(); // refresh the aggregate shown on cards + this page
+      toast('Thanks for your review!', 'check-circle-2');
+    } catch (e) { toast(e.message || 'Could not submit review', 'alert-triangle'); }
+  };
 
   return (
     <CustomerShell>
@@ -692,7 +740,7 @@ function Product() {
           <div>
             <div className="pc-cat">{G.catName(p.cat)} · {p.brand}</div>
             <h1>{p.name}</h1>
-            <div className="row gap-10"><Stars rating={p.rating} /><span className="muted" style={{ fontSize: 13.5 }}>{p.rating} · {p.reviews} reviews</span>
+            <div className="row gap-10"><Stars rating={p.rating} /><span className="muted" style={{ fontSize: 13.5 }}>{p.reviews ? `${p.rating.toFixed(1)} · ${p.reviews} review${p.reviews === 1 ? '' : 's'}` : 'No ratings yet'}</span>
               {p.stock <= 10 && <Badge kind="b-amber" icon="flame">Only {p.stock} left</Badge>}</div>
             <div className="pdp-price"><span className="now"><Tk>{price}</Tk></span>{off > 0 && <><span className="was"><Tk>{p.price}</Tk></span><Badge kind="b-red">Save <Tk>{p.price - price}</Tk></Badge></>}</div>
             <p className="pdp-desc">{p.desc}</p>
@@ -702,12 +750,53 @@ function Product() {
               <Qty value={qty} onChange={setQty} max={p.stock} />
               <button className="btn btn-primary btn-lg" style={{ flex: 1 }} onClick={() => addToCart(p.id, qty)}><Icon name="shopping-cart" size={18} /> Add to Cart</button>
               <button className="btn btn-accent btn-lg" onClick={() => { addToCart(p.id, qty); navigate('cart'); }}>Buy Now</button>
+              <button className="btn btn-ghost btn-icon btn-lg" title={liked ? 'Remove from favourites' : 'Save to favourites'} onClick={() => toggleFav(p.id)}>
+                <Icon name="heart" size={18} style={liked ? { fill: '#E76F51', color: '#E76F51' } : null} />
+              </button>
             </div>
             <div className="row gap-16 muted" style={{ fontSize: 12.5, flexWrap: 'wrap' }}>
               <span className="row gap-6"><Icon name="truck" size={15} /> Delivered in 2–4 days</span>
               <span className="row gap-6"><Icon name="shield-check" size={15} /> Official warranty</span>
               <span className="row gap-6"><Icon name="rotate-ccw" size={15} /> 7-day replacement</span>
             </div>
+          </div>
+        </div>
+
+        {/* Ratings & reviews */}
+        <div className="section" style={{ paddingBottom: 0 }}>
+          <div className="sec-head"><h2 style={{ fontSize: 21 }}>Ratings & reviews</h2></div>
+          <div className="card card-pad">
+            <div className="row gap-20" style={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
+              <div style={{ textAlign: 'center', minWidth: 120 }}>
+                <div style={{ fontSize: 38, fontWeight: 800, color: 'var(--teal)', lineHeight: 1 }}>{p.reviews ? p.rating.toFixed(1) : '—'}</div>
+                <div style={{ margin: '6px 0' }}><Stars rating={p.rating} /></div>
+                <div className="muted" style={{ fontSize: 12 }}>{p.reviews} review{p.reviews === 1 ? '' : 's'}</div>
+              </div>
+              <div style={{ flex: 1, minWidth: 240 }}>
+                {user ? (
+                  <>
+                    <div style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 8 }}>{data.myReview ? 'Update your review' : 'Rate this product'}</div>
+                    <StarInput value={draftRating} onChange={setDraftRating} />
+                    <textarea className="inp" style={{ marginTop: 10, minHeight: 70 }} placeholder="Share your thoughts (optional)" value={draftComment} onChange={e => setDraftComment(e.target.value)} />
+                    <button className="btn btn-primary btn-sm" style={{ marginTop: 10 }} onClick={submitReview}>{data.myReview ? 'Update review' : 'Submit review'}</button>
+                  </>
+                ) : (
+                  <div className="muted" style={{ fontSize: 14, lineHeight: 1.6 }}>Bought this or have an opinion? <span className="linkish" onClick={() => navigate('login')}>Log in</span> to rate it and leave a review.</div>
+                )}
+              </div>
+            </div>
+            <div className="divider" />
+            {data.reviews.length === 0 ? (
+              <div className="muted" style={{ fontSize: 14, padding: '6px 0' }}>No reviews yet — be the first to review this product.</div>
+            ) : data.reviews.map(rv => (
+              <div key={rv.id} style={{ padding: '12px 0', borderBottom: '1px solid var(--line)' }}>
+                <div className="between" style={{ flexWrap: 'wrap', gap: 8 }}>
+                  <div className="row gap-8"><div className="ca" style={{ width: 30, height: 30, borderRadius: '50%' }}>{rv.userName[0]}</div><b style={{ fontSize: 13.5 }}>{rv.userName}</b></div>
+                  <Stars rating={rv.rating} />
+                </div>
+                {rv.comment && <p style={{ margin: '8px 0 0', fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.5 }}>{rv.comment}</p>}
+              </div>
+            ))}
           </div>
         </div>
 
@@ -1056,12 +1145,13 @@ function OrderRow({ o, onOpen }) {
 }
 
 function Account() {
-  const { navigate, user, logout, isMobile, myOrders, refreshMyOrders } = useShop();
+  const { navigate, user, logout, isMobile, myOrders, refreshMyOrders, favIds } = useShop();
   const [open, setOpen] = useState(null);
   const [tab, setTab] = useState('orders');
+  const favProducts = favIds.map(G.byId).filter(Boolean);
   useEffect(() => { if (!user) navigate('login'); else refreshMyOrders(); }, []);
   if (!user) return null;
-  const nav = [['orders', 'package', 'My Orders'], ['profile', 'user', 'Profile'], ['address', 'map-pin', 'Addresses'], ['support', 'headset', 'Support']];
+  const nav = [['orders', 'package', 'My Orders'], ['favourites', 'heart', 'Favourites'], ['profile', 'user', 'Profile'], ['address', 'map-pin', 'Addresses'], ['support', 'headset', 'Support']];
 
   return (
     <CustomerShell>
@@ -1095,6 +1185,16 @@ function Account() {
                 </div>
                 <button className="btn btn-primary" style={{ marginTop: 16 }}>Save changes</button>
               </div>
+            )}
+            {tab === 'favourites' && (
+              <>
+                <div className="sec-head" style={{ marginBottom: 14 }}><div><h2 style={{ fontSize: 21 }}>Favourites</h2><p>{favProducts.length} saved item{favProducts.length === 1 ? '' : 's'}</p></div></div>
+                {favProducts.length === 0 ? (
+                  <div className="empty-state"><div className="es-ic"><Icon name="heart" /></div><h3>No favourites yet</h3><p>Tap the heart on any product to save it here for later.</p><button className="btn btn-primary btn-lg" onClick={() => navigate('category')}>Browse products</button></div>
+                ) : (
+                  <div className="pgrid">{favProducts.map(fp => <ProductCard key={fp.id} p={fp} />)}</div>
+                )}
+              </>
             )}
             {tab === 'address' && (
               <div className="card card-pad">
@@ -2026,6 +2126,7 @@ function App({ initialRoute = 'home' }) {
   const [loaded, setLoaded] = useState(false);
   const [myOrders, setMyOrders] = useState([]);
   const [adminOrders, setAdminOrders] = useState([]);
+  const [favIds, setFavIds] = useState([]);
   const [catalogVersion, setCatalogVersion] = useState(0);
 
   // Responsive: drive the mobile layout from the real viewport width
@@ -2052,11 +2153,22 @@ function App({ initialRoute = 'home' }) {
   useEffect(() => {
     (async () => {
       try { await reloadCatalog(); } catch { /* empty catalog */ }
-      try { const me = await api('/api/auth/me'); if (me.user) setUser(me.user); } catch { /* guest */ }
+      try { const me = await api('/api/auth/me'); if (me.user) { setUser(me.user); loadFavourites(); } } catch { /* guest */ }
       try { const a = await api('/api/admin/me'); if (a.admin) setAdmin(true); } catch { /* not admin */ }
       setLoaded(true);
     })();
   }, []);
+
+  // ---- favourites (wishlist) ----
+  const loadFavourites = async () => {
+    try { const r = await api('/api/favourites'); setFavIds(r.ids || []); } catch { setFavIds([]); }
+  };
+  const toggleFav = async (productId) => {
+    if (!user) { toast('Log in to save favourites', 'heart'); navigate('login'); return; }
+    setFavIds((ids) => ids.includes(productId) ? ids.filter((x) => x !== productId) : [...ids, productId]); // optimistic
+    try { const r = await api('/api/favourites', { method: 'POST', body: JSON.stringify({ productId }) }); setFavIds(r.ids || []); }
+    catch (e) { toast(e.message || 'Could not update favourite', 'alert-triangle'); loadFavourites(); }
+  };
 
   const refreshMyOrders = async () => {
     try { const r = await api('/api/orders'); setMyOrders(r.orders || []); } catch { /* ignore */ }
@@ -2082,14 +2194,14 @@ function App({ initialRoute = 'home' }) {
   const login = async (identifier, password) => {
     try {
       const r = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ identifier, password }) });
-      setUser(r.user); await refreshMyOrders(); navigate('account');
+      setUser(r.user); await refreshMyOrders(); loadFavourites(); navigate('account');
       toast('Welcome, ' + r.user.name.split(' ')[0] + '!', 'check-circle-2');
     } catch (e) { toast(e.message || 'Login failed', 'alert-triangle'); }
   };
   const register = async (payload) => {
     try {
       const r = await api('/api/auth/register', { method: 'POST', body: JSON.stringify(payload) });
-      setUser(r.user); navigate('account');
+      setUser(r.user); loadFavourites(); navigate('account');
       toast('Welcome, ' + r.user.name.split(' ')[0] + '!', 'check-circle-2');
     } catch (e) { toast(e.message || 'Could not create account', 'alert-triangle'); }
   };
@@ -2102,7 +2214,7 @@ function App({ initialRoute = 'home' }) {
   const logout = async () => {
     try { await api('/api/auth/logout', { method: 'POST' }); } catch { /* ignore */ }
     try { await api('/api/admin/logout', { method: 'POST' }); } catch { /* ignore */ }
-    setUser(null); setAdmin(false); setMyOrders([]);
+    setUser(null); setAdmin(false); setMyOrders([]); setFavIds([]);
   };
 
   const placeOrder = async (data) => {
@@ -2118,7 +2230,7 @@ function App({ initialRoute = 'home' }) {
   const ctx = { route, navigate, cart, cartCount: cart.reduce((s, c) => s + c.qty, 0), addToCart, setQty, removeFromCart,
     user, login, register, logout, admin, loginAdmin, placeOrder, lastOrder, heroConfig, setHeroConfig, isMobile, toast, banner, setBanner,
     adminCollapsed, setAdminCollapsed, loaded, catalogVersion, reloadCatalog,
-    myOrders, refreshMyOrders, adminOrders, refreshAdminOrders };
+    myOrders, refreshMyOrders, adminOrders, refreshAdminOrders, favIds, toggleFav };
 
   const isAdmin = route.name.startsWith('admin');
   const Screen = {

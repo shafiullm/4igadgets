@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { categories, products } from "@/lib/db/schema";
 import { serializeProduct } from "@/lib/serialize";
+import { ratingMap } from "@/lib/reviews";
 import { handle, json } from "@/lib/api";
 
 export async function GET(req: Request) {
@@ -11,6 +12,7 @@ export async function GET(req: Request) {
     const slug = new URL(req.url).searchParams.get("category");
     const cats = await db.select().from(categories).all();
     const slugById = new Map(cats.map((c) => [c.id, c.slug]));
+    const ratings = await ratingMap(db);
 
     let rows;
     if (slug) {
@@ -22,7 +24,10 @@ export async function GET(req: Request) {
     }
 
     return json({
-      products: rows.map((p) => serializeProduct(p, slugById.get(p.categoryId) ?? "")),
+      products: rows.map((p) => {
+        const r = ratings.get(p.id);
+        return serializeProduct(p, slugById.get(p.categoryId) ?? "", r?.avg ?? 0, r?.count ?? 0);
+      }),
     });
   });
 }
