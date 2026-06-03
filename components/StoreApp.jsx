@@ -1076,8 +1076,17 @@ function OrderDetailModal({ o, onClose }) {
   const total = o.total;
   const steps = ['placed', 'confirmed', 'packed', 'shipped', 'delivered'];
   const curIdx = steps.indexOf(o.status);
+  // Download a server-generated PDF invoice (same-origin GET sends the session cookie).
+  const downloadInvoice = () => {
+    const a = document.createElement('a');
+    a.href = `/api/orders/${o.id}/invoice`;
+    a.download = `invoice-${o.id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
   return (
-    <Modal title={`Order ${o.id}`} onClose={onClose} footer={<><button className="btn btn-ghost" onClick={onClose}>Close</button><button className="btn btn-primary"><Icon name="download" size={16} /> Invoice</button></>}>
+    <Modal title={`Order ${o.id}`} onClose={onClose} footer={<><button className="btn btn-ghost" onClick={onClose}>Close</button><button className="btn btn-primary" onClick={downloadInvoice}><Icon name="download" size={16} /> Invoice</button></>}>
       <div className="row gap-8" style={{ marginBottom: 16 }}><StatusBadge status={o.status} /><PayBadge status={o.payStatus} /><span className="muted" style={{ fontSize: 12.5 }}>· {o.date}</span></div>
       {o.status !== 'cancelled' && (
         <div className="row" style={{ marginBottom: 22 }}>
