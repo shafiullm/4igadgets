@@ -700,7 +700,7 @@ function Product() {
   const p = G.byId(route.params.id) || G.products[0];
   const [qty, setQty] = useState(1);
   const [img, setImg] = useState(0);
-  const [data, setData] = useState({ reviews: [], myReview: null });
+  const [data, setData] = useState({ reviews: [], myReview: null, canReview: false });
   const [draftRating, setDraftRating] = useState(0);
   const [draftComment, setDraftComment] = useState('');
   const price = G.priceOf(p);
@@ -711,7 +711,7 @@ function Product() {
   const loadReviews = async () => {
     try {
       const r = await api('/api/products/' + p.slug);
-      setData({ reviews: r.reviews || [], myReview: r.myReview || null });
+      setData({ reviews: r.reviews || [], myReview: r.myReview || null, canReview: !!r.canReview });
       if (r.myReview) { setDraftRating(r.myReview.rating); setDraftComment(r.myReview.comment || ''); }
     } catch { /* ignore */ }
   };
@@ -773,7 +773,9 @@ function Product() {
                 <div className="muted" style={{ fontSize: 12 }}>{p.reviews} review{p.reviews === 1 ? '' : 's'}</div>
               </div>
               <div style={{ flex: 1, minWidth: 240 }}>
-                {user ? (
+                {!user ? (
+                  <div className="muted" style={{ fontSize: 14, lineHeight: 1.6 }}>Bought this and have an opinion? <span className="linkish" onClick={() => navigate('login')}>Log in</span> to rate it and leave a review.</div>
+                ) : (data.canReview || data.myReview) ? (
                   <>
                     <div style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 8 }}>{data.myReview ? 'Update your review' : 'Rate this product'}</div>
                     <StarInput value={draftRating} onChange={setDraftRating} />
@@ -781,7 +783,7 @@ function Product() {
                     <button className="btn btn-primary btn-sm" style={{ marginTop: 10 }} onClick={submitReview}>{data.myReview ? 'Update review' : 'Submit review'}</button>
                   </>
                 ) : (
-                  <div className="muted" style={{ fontSize: 14, lineHeight: 1.6 }}>Bought this or have an opinion? <span className="linkish" onClick={() => navigate('login')}>Log in</span> to rate it and leave a review.</div>
+                  <div className="muted" style={{ fontSize: 14, lineHeight: 1.6 }}><Icon name="lock" size={14} style={{ verticalAlign: -2, marginRight: 4 }} />Only verified buyers can review. Purchase this product to share your rating.</div>
                 )}
               </div>
             </div>
@@ -1125,6 +1127,7 @@ function Register() {
 
 // ---------- Account / order history ----------
 function OrderRow({ o, onOpen }) {
+  const { navigate } = useShop();
   const lines = o.items.map(([id, qty]) => ({ p: G.byId(id), qty })).filter(l => l.p);
   const total = o.total;
   return (
@@ -1134,7 +1137,7 @@ function OrderRow({ o, onOpen }) {
         <div className="row gap-8" style={{ flexWrap: 'wrap' }}><PayBadge status={o.payStatus} /><StatusBadge status={o.status} /></div>
       </div>
       <div className="between" style={{ gap: 14, flexWrap: 'wrap' }}>
-        <div className="order-thumbs">{lines.slice(0, 4).map((l, i) => <div className="ot" key={i}><Thumb label="" tint={l.p.tint} style={{ height: '100%' }} /></div>)}</div>
+        <div className="order-thumbs">{lines.slice(0, 4).map((l, i) => <div className="ot" key={i} title={l.p.name} style={{ cursor: 'pointer' }} onClick={() => navigate('product', { id: l.p.id })}><Thumb label="" tint={l.p.tint} style={{ height: '100%' }} /></div>)}</div>
         <div className="row gap-16">
           <div><div className="muted" style={{ fontSize: 11.5 }}>Total</div><div style={{ fontWeight: 800, color: 'var(--teal)', fontSize: 16 }}><Tk>{total}</Tk></div></div>
           <button className="btn btn-ghost btn-sm" onClick={() => onOpen(o)}>View details <Icon name="arrow-right" size={14} /></button>
@@ -1215,6 +1218,7 @@ function Account() {
 }
 
 function OrderDetailModal({ o, onClose }) {
+  const { navigate } = useShop();
   const lines = o.items.map(([id, qty]) => ({ p: G.byId(id), qty })).filter(l => l.p);
   const total = o.total;
   const steps = ['placed', 'confirmed', 'packed', 'shipped', 'delivered'];
@@ -1245,7 +1249,7 @@ function OrderDetailModal({ o, onClose }) {
         </div>
       )}
       {lines.map(l => (
-        <div className="mini-item" key={l.p.id}>
+        <div className="mini-item" key={l.p.id} style={{ cursor: 'pointer' }} title={`View ${l.p.name}`} onClick={() => { onClose(); navigate('product', { id: l.p.id }); }}>
           <div className="mi-img"><Thumb label={l.p.brand} tint={l.p.tint} style={{ height: '100%' }} /></div>
           <div><div className="mi-name">{l.p.name}</div><div className="mi-qty">Qty {l.qty}</div></div>
           <div className="mi-price"><Tk>{G.priceOf(l.p) * l.qty}</Tk></div>
