@@ -103,7 +103,7 @@ export async function GET() {
     const result = [];
     for (const o of list) {
       const its = await db.select().from(orderItems).where(eq(orderItems.orderId, o.id)).all();
-      result.push(serializeOrder(o, its, u?.name, u?.phone));
+      result.push(serializeOrder(o, its, u?.name, u?.phone, u?.email));
     }
     return json({ orders: result });
   });

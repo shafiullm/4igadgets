@@ -1488,7 +1488,7 @@ function AdminLogin() {
         </div>
         <h1 style={{ marginTop: 14 }}>Admin Panel</h1>
         <p className="sub">Staff access only. Customer accounts won't work here.</p>
-        <Field label="Admin email"><input className="inp" placeholder="admin@4igadgets.bd" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
+        <Field label="Admin email"><input className="inp" placeholder="Enter admin email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
         <div style={{ height: 14 }} />
         <Field label="Password"><input className="inp" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submit(); }} /></Field>
         <div style={{ height: 20 }} />
@@ -1869,6 +1869,9 @@ function AdminOrders() {
 function AdminOrderModal({ o, onClose, onStatus, onPay }) {
   const lines = o.items.map(([id, qty]) => ({ p: G.byId(id), qty })).filter(l => l.p);
   const total = o.total;
+  const [showCustomer, setShowCustomer] = useState(false);
+  const [showProduct, setShowProduct] = useState(null);
+  const addr = [[o.address, o.area].filter(Boolean).join(', '), [o.district, o.division].filter(Boolean).join(', ')].filter(Boolean);
   return (
     <Modal title={`Order ${o.id}`} onClose={onClose}
       footer={<>
@@ -1876,19 +1879,108 @@ function AdminOrderModal({ o, onClose, onStatus, onPay }) {
         {o.status !== 'delivered' && o.status !== 'cancelled' && <button className="btn btn-primary" onClick={() => { onStatus(o.id, 'delivered'); onClose(); }}>Mark delivered</button>}
       </>}>
       <div className="row gap-8" style={{ marginBottom: 16, flexWrap: 'wrap' }}><StatusBadge status={o.status} /><PayBadge status={o.payStatus} /><span className="muted" style={{ fontSize: 12.5 }}>· {o.date}</span></div>
-      <div className="card" style={{ padding: 14, marginBottom: 16, background: 'var(--cream)' }}>
-        <div className="cust-cell"><div className="ca" style={{ width: 40, height: 40 }}>{o.guest ? 'G' : o.customer[0]}</div>
-          <div><div style={{ fontWeight: 700 }}>{o.guest ? 'Guest checkout' : o.customer}</div><div className="muted" style={{ fontSize: 12.5 }}>{o.phone} · {G.payMethod[o.pay].label}{o.txn && ` · TrxID ${o.txn}`}</div></div>
+
+      {/* Customer — click to see full details */}
+      <div className="card" style={{ padding: 14, marginBottom: 12, background: 'var(--cream)', cursor: 'pointer' }} title="View customer details" onClick={() => setShowCustomer(true)}>
+        <div className="cust-cell">
+          <div className="ca" style={{ width: 40, height: 40 }}>{o.guest ? 'G' : o.customer[0]}</div>
+          <div style={{ flex: 1 }}><div style={{ fontWeight: 700 }}>{o.guest ? 'Guest checkout' : o.customer}</div><div className="muted" style={{ fontSize: 12.5 }}>{o.phone} · {G.payMethod[o.pay].label}{o.txn && ` · TrxID ${o.txn}`}</div></div>
+          <span className="linkish" style={{ fontSize: 12.5 }}>Details <Icon name="arrow-right" size={13} /></span>
         </div>
       </div>
+
+      {/* Shipping address */}
+      <div className="card" style={{ padding: 14, marginBottom: 16 }}>
+        <div className="row gap-10" style={{ alignItems: 'flex-start' }}>
+          <Icon name="map-pin" size={16} style={{ color: 'var(--teal)', marginTop: 2 }} />
+          <div style={{ fontSize: 13.5, lineHeight: 1.5 }}>
+            <div style={{ fontWeight: 700, marginBottom: 2 }}>Shipping address</div>
+            {addr.length ? addr.map((l, i) => <div key={i} className="muted">{l}</div>) : <div className="muted">No address on file</div>}
+          </div>
+        </div>
+      </div>
+
       {lines.map(l => (
-        <div className="mini-item" key={l.p.id}>
+        <div className="mini-item" key={l.p.id} style={{ cursor: 'pointer' }} title={`View ${l.p.name}`} onClick={() => setShowProduct(l.p.id)}>
           <div className="mi-img"><Thumb label={l.p.brand} tint={l.p.tint} style={{ height: '100%' }} /></div>
           <div><div className="mi-name">{l.p.name}</div><div className="mi-qty">Qty {l.qty} × <Tk>{G.priceOf(l.p)}</Tk></div></div>
           <div className="mi-price"><Tk>{G.priceOf(l.p) * l.qty}</Tk></div>
         </div>
       ))}
       <div className="summary-row total" style={{ borderTop: '1.5px dashed var(--line-2)', marginTop: 10 }}><span>Total</span><span><Tk>{total}</Tk></span></div>
+
+      {showCustomer && <AdminCustomerModal order={o} onClose={() => setShowCustomer(false)} />}
+      {showProduct && <AdminProductModal productId={showProduct} onClose={() => setShowProduct(null)} />}
+    </Modal>
+  );
+}
+
+function AdminInfoRow({ icon, label, value }) {
+  return (
+    <div className="row gap-10" style={{ alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid var(--line)' }}>
+      <Icon name={icon} size={15} style={{ color: 'var(--teal)', marginTop: 2 }} />
+      <div style={{ flex: 1 }}>
+        <div className="muted" style={{ fontSize: 11.5 }}>{label}</div>
+        <div style={{ fontSize: 13.5 }}>{value || '—'}</div>
+      </div>
+    </div>
+  );
+}
+
+function AdminCustomerModal({ order, onClose }) {
+  const [c, setC] = useState(null);
+  const [loading, setLoading] = useState(!order.guest);
+  useEffect(() => {
+    if (order.guest) return;
+    (async () => {
+      try { const r = await api('/api/admin/customers/' + order.userId); setC(r.customer); } catch { /* ignore */ }
+      setLoading(false);
+    })();
+  }, []);
+  const shipAddr = [[order.address, order.area].filter(Boolean).join(', '), [order.district, order.division].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+  const savedAddr = c && [c.fullAddress, c.area, c.district, c.division].filter(Boolean).join(', ');
+  return (
+    <Modal title="Customer details" onClose={onClose} footer={<button className="btn btn-primary" onClick={onClose}>Close</button>}>
+      <div className="cust-cell" style={{ marginBottom: 14 }}>
+        <div className="ca" style={{ width: 46, height: 46, fontSize: 17 }}>{(order.customer || '?')[0]}</div>
+        <div>
+          <div style={{ fontWeight: 800, fontSize: 16 }}>{order.customer}{order.guest && <span className="guest-tag" style={{ marginLeft: 8 }}>Guest</span>}</div>
+          <div className="muted" style={{ fontSize: 12.5 }}>{order.guest ? 'Guest checkout (no account)' : (loading ? 'Loading…' : c ? `Member since ${c.memberSince}` : '')}</div>
+        </div>
+      </div>
+      <AdminInfoRow icon="phone" label="Phone" value={order.phone || (c && c.phone)} />
+      <AdminInfoRow icon="mail" label="Email" value={(c && c.email) || order.email} />
+      <AdminInfoRow icon="map-pin" label="Shipping address (this order)" value={shipAddr} />
+      {!order.guest && <AdminInfoRow icon="home" label="Saved address" value={savedAddr} />}
+      {!order.guest && (
+        <div className="row gap-20" style={{ marginTop: 14 }}>
+          <div><div className="muted" style={{ fontSize: 11.5 }}>Total orders</div><div style={{ fontWeight: 800, fontSize: 18 }}>{loading ? '…' : (c ? c.orderCount : '—')}</div></div>
+          <div><div className="muted" style={{ fontSize: 11.5 }}>Total paid</div><div style={{ fontWeight: 800, fontSize: 18, color: 'var(--teal)' }}>{loading ? '…' : (c ? G.taka(c.totalSpent) : '—')}</div></div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+function AdminProductModal({ productId, onClose }) {
+  const { navigate } = useShop();
+  const p = G.byId(productId);
+  if (!p) return <Modal title="Product" onClose={onClose} footer={<button className="btn btn-primary" onClick={onClose}>Close</button>}><p style={{ margin: 0 }}>This product is no longer available.</p></Modal>;
+  return (
+    <Modal title="Product details" onClose={onClose}
+      footer={<><button className="btn btn-ghost" onClick={onClose}>Close</button><button className="btn btn-primary" onClick={() => { onClose(); navigate('product', { id: p.id }); }}><Icon name="arrow-right" size={16} /> Open product page</button></>}>
+      <div className="row gap-14" style={{ alignItems: 'flex-start', marginBottom: 14 }}>
+        <div style={{ width: 96, height: 96, borderRadius: 'var(--r)', overflow: 'hidden', border: '1px solid var(--line)', flex: '0 0 96px' }}>{p.imageUrl ? <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Thumb label={p.brand} tint={p.tint} style={{ height: '100%' }} />}</div>
+        <div>
+          <div className="pc-cat">{G.catName(p.cat)} · {p.brand}</div>
+          <div style={{ fontWeight: 800, fontSize: 16, margin: '2px 0 6px' }}>{p.name}</div>
+          <div className="row gap-8" style={{ alignItems: 'baseline' }}><span style={{ fontWeight: 800, color: 'var(--teal)', fontSize: 18 }}><Tk>{G.priceOf(p)}</Tk></span>{p.disc > 0 && <span style={{ fontSize: 13, color: 'var(--muted-2)', textDecoration: 'line-through' }}><Tk>{p.price}</Tk></span>}</div>
+          <div className="muted" style={{ fontSize: 12.5, marginTop: 6 }}>Stock: {p.stock} · {p.reviews ? `${p.rating.toFixed(1)}★ (${p.reviews})` : 'No ratings yet'}</div>
+        </div>
+      </div>
+      <div className="divider" />
+      <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 6 }}>Description</div>
+      <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: 'var(--ink-2)' }}>{p.desc || 'No description provided.'}</p>
     </Modal>
   );
 }

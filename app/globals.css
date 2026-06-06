@@ -597,3 +597,9 @@ table.tbl tr:hover td{background:var(--cream);}
 /* On real mobile widths the sticky admin sidebar is hidden anyway
    (.mobile .admin-side{display:none}); keep content full-width. */
 .app-root.mobile .admin{grid-template-columns:1fr;}
+
+/* Mobile tab bar: pin to the viewport bottom (not the content bottom) so it
+   stays put on short pages (empty cart, no search results, etc.). Pad the
+   page so content/footer isn't hidden behind it. */
+.app-root.mobile{padding-bottom:64px;}
+.app-root.mobile .m-tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;}

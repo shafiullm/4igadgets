@@ -181,6 +181,7 @@ const ORDER_STATUS_UI: Record<OrderStatus, string> = {
 
 export type UiOrder = {
   id: string;
+  userId: string | null;
   date: string;
   customer: string;
   guest: boolean;
@@ -203,6 +204,7 @@ export function serializeOrder(
   items: OrderItem[],
   userName?: string | null,
   userPhone?: string | null,
+  userEmail?: string | null,
 ): UiOrder {
   const fmt = new Date(o.createdAt).toLocaleDateString("en-GB", {
     day: "2-digit",
@@ -211,11 +213,12 @@ export function serializeOrder(
   });
   return {
     id: o.id,
+    userId: o.userId ?? null,
     date: fmt,
     customer: o.userId ? userName ?? "Customer" : o.guestName ?? "Guest",
     guest: !o.userId,
     phone: o.userId ? userPhone ?? "" : o.guestPhone ?? "",
-    email: o.guestEmail ?? "",
+    email: o.userId ? userEmail ?? "" : o.guestEmail ?? "",
     items: items.map((it) => [it.productId, it.quantity] as [string, number]),
     pay: PAY_METHOD_UI[o.paymentMethod],
     payStatus: PAY_STATUS_UI[o.paymentStatus],

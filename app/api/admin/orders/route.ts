@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     for (const o of list) {
       const its = await db.select().from(orderItems).where(eq(orderItems.orderId, o.id)).all();
       const u = o.userId ? userById.get(o.userId) : null;
-      result.push(serializeOrder(o, its, u?.name, u?.phone));
+      result.push(serializeOrder(o, its, u?.name, u?.phone, u?.email));
     }
     return json({ orders: result });
   });

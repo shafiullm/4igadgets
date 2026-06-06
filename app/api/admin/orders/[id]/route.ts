@@ -39,6 +39,6 @@ export async function PATCH(req: Request, { params }: Ctx) {
     const u = updated!.userId
       ? await db.select().from(users).where(eq(users.id, updated!.userId)).get()
       : null;
-    return json({ order: serializeOrder(updated!, its, u?.name, u?.phone) });
+    return json({ order: serializeOrder(updated!, its, u?.name, u?.phone, u?.email) });
   });
 }
