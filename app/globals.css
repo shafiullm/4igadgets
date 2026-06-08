@@ -603,3 +603,19 @@ table.tbl tr:hover td{background:var(--cream);}
    page so content/footer isn't hidden behind it. */
 .app-root.mobile{padding-bottom:64px;}
 .app-root.mobile .m-tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;}
+
+/* ============================================================
+   ADMIN — mobile card lists (replace horizontally-scrolling
+   tables on phones; desktop keeps the tables).
+   ============================================================ */
+.adm-list{display:flex;flex-direction:column;gap:12px;padding:14px;}
+.adm-item{border:1px solid var(--line);border-radius:var(--r);background:#fff;padding:14px;}
+.adm-item .ai-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.adm-item .ai-badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+.adm-kv{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;padding:7px 0;border-top:1px solid var(--line);margin-top:8px;}
+.adm-kv .k{color:var(--muted);font-size:12px;}
+.adm-actions{display:flex;gap:8px;margin-top:12px;}
+.adm-actions .btn{flex:1;justify-content:center;}
+.adm-actions .act-btn{flex:0 0 auto;width:40px;height:38px;}
+.adm-prod{display:flex;gap:12px;align-items:center;}
+.adm-prod .ap-img{width:52px;height:52px;border-radius:10px;overflow:hidden;flex:0 0 52px;border:1px solid var(--line);}

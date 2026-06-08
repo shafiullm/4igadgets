@@ -1581,6 +1581,19 @@ function AdminDashboard() {
       <div className="dash-grid">
         <div className="tbl-card">
           <div className="tbl-head"><h3>Recent orders</h3><button className="btn btn-soft btn-sm" onClick={() => navigate('admin-orders')}>View all <Icon name="arrow-right" size={14} /></button></div>
+          {isMobile ? (
+            <div className="adm-list">
+              {orders.slice(0, 6).map(o => (
+                <div className="adm-item" key={o.id} style={{ cursor: 'pointer' }} onClick={() => navigate('admin-orders')}>
+                  <div className="ai-head">
+                    <div><div className="cell-strong">{o.id}</div><div className="muted" style={{ fontSize: 11.5 }}>{o.guest ? 'Guest' : o.customer}</div></div>
+                    <div className="ai-badges"><PayBadge status={o.payStatus} /><StatusBadge status={o.status} /></div>
+                  </div>
+                  <div className="adm-kv"><span className="row gap-6"><span className={'pay-logo ' + o.pay} style={{ width: 'auto', minWidth: 30, height: 20, fontSize: 9, padding: '0 6px' }}>{G.payMethod[o.pay].short}</span></span><span className="cell-strong"><Tk>{o.total}</Tk></span></div>
+                </div>
+              ))}
+            </div>
+          ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead><tr><th>Order</th><th>Customer</th><th>Payment</th><th>Status</th><th>Total</th></tr></thead>
@@ -1600,6 +1613,7 @@ function AdminDashboard() {
               </tbody>
             </table>
           </div>
+          )}
         </div>
         <div className="tbl-card">
           <div className="tbl-head"><h3>Orders by status</h3></div>
@@ -1804,7 +1818,7 @@ function HeroEditorModal({ onClose }) {
 }
 
 function AdminOrders() {
-  const { toast, adminOrders, refreshAdminOrders } = useShop();
+  const { toast, adminOrders, refreshAdminOrders, isMobile } = useShop();
   const [filter, setFilter] = useState('all');
   const [open, setOpen] = useState(null);
   useEffect(() => { refreshAdminOrders('all'); }, []);
@@ -1820,15 +1834,49 @@ function AdminOrders() {
     catch (e) { toast(e.message || 'Update failed', 'alert-triangle'); }
   };
 
+  const StatusSelect = ({ o }) => (
+    <select className="status-select" value={o.status} onChange={e => setStatus(o.id, e.target.value)} disabled={o.status === 'cancelled'}>
+      {G.statusOrder.map(s => <option key={s} value={s}>{G.statusMeta[s].label}</option>)}
+    </select>
+  );
+
   return (
     <AdminShell active="admin-orders" title="Orders">
-      <div className="chips" style={{ marginBottom: 16 }}>
+      <div className="chips" style={{ marginBottom: 16, overflowX: 'auto', flexWrap: isMobile ? 'nowrap' : 'wrap', paddingBottom: isMobile ? 4 : 0 }}>
         {[['all', 'All'], ['placed', 'New'], ['shipped', 'Shipped'], ['delivered', 'Delivered'], ['unpaid', 'Payment due'], ['cancelled', 'Cancelled']].map(([k, l]) => (
-          <span key={k} className={'chip' + (filter === k ? ' on' : '')} onClick={() => setFilter(k)}>{l}</span>
+          <span key={k} className={'chip' + (filter === k ? ' on' : '')} style={{ whiteSpace: 'nowrap' }} onClick={() => setFilter(k)}>{l}</span>
         ))}
       </div>
       <div className="tbl-card">
-        <div className="tbl-head"><h3>{list.length} orders</h3><div className="search" style={{ maxWidth: 240 }}><div className="inp-group"><span className="pfx"><Icon name="search" size={15} /></span><input placeholder="Search orders…" /></div></div></div>
+        <div className="tbl-head"><h3>{list.length} orders</h3>{!isMobile && <div className="search" style={{ maxWidth: 240 }}><div className="inp-group"><span className="pfx"><Icon name="search" size={15} /></span><input placeholder="Search orders…" /></div></div>}</div>
+        {isMobile ? (
+          <div className="adm-list">
+            {list.map(o => {
+              const qty = o.items.reduce((a, [, q]) => a + q, 0);
+              return (
+                <div className="adm-item" key={o.id}>
+                  <div className="ai-head">
+                    <div onClick={() => setOpen(o)} style={{ cursor: 'pointer' }}>
+                      <div className="cell-strong">{o.id}</div>
+                      <div className="muted" style={{ fontSize: 11.5 }}>{o.date} · {qty} item{qty > 1 ? 's' : ''}</div>
+                    </div>
+                    <div className="ai-badges"><PayBadge status={o.payStatus} /><StatusBadge status={o.status} /></div>
+                  </div>
+                  <div className="adm-kv">
+                    <span className="row gap-8"><div className="ca" style={{ width: 30, height: 30 }}>{o.guest ? 'G' : o.customer[0]}</div><span><div style={{ fontWeight: 600, fontSize: 13 }}>{o.guest ? 'Guest' : o.customer}</div><div className="muted" style={{ fontSize: 11.5 }}>{o.phone}</div></span></span>
+                    <span className="cell-strong"><Tk>{o.total}</Tk></span>
+                  </div>
+                  <div className="adm-kv"><span className="k">Payment</span><span className="row gap-6"><span className={'pay-logo ' + o.pay} style={{ width: 'auto', minWidth: 32, height: 22, fontSize: 9.5, padding: '0 7px' }}>{G.payMethod[o.pay].short}</span></span></div>
+                  <div className="adm-kv"><span className="k">Status</span><StatusSelect o={o} /></div>
+                  <div className="adm-actions">
+                    <button className="btn btn-soft btn-sm" onClick={() => setOpen(o)}><Icon name="eye" size={15} /> View</button>
+                    {o.payStatus !== 'paid' && o.status !== 'cancelled' && <button className="btn btn-ghost btn-sm" onClick={() => confirmPay(o.id)}><Icon name="badge-check" size={15} /> Confirm</button>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
         <div className="tbl-wrap">
           <table className="tbl">
             <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Payment</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
@@ -1843,11 +1891,7 @@ function AdminOrders() {
                     <td>{qty} item{qty > 1 ? 's' : ''}</td>
                     <td><div className="row gap-6"><span className={'pay-logo ' + o.pay} style={{ width: 'auto', minWidth: 32, height: 22, fontSize: 9.5, padding: '0 7px' }}>{G.payMethod[o.pay].short}</span><PayBadge status={o.payStatus} /></div></td>
                     <td className="cell-strong"><Tk>{total}</Tk></td>
-                    <td>
-                      <select className="status-select" value={o.status} onChange={e => setStatus(o.id, e.target.value)} disabled={o.status === 'cancelled'}>
-                        {G.statusOrder.map(s => <option key={s} value={s}>{G.statusMeta[s].label}</option>)}
-                      </select>
-                    </td>
+                    <td><StatusSelect o={o} /></td>
                     <td>
                       <div className="row-actions">
                         <button className="act-btn" onClick={() => setOpen(o)} title="View"><Icon name="eye" size={16} /></button>
@@ -1860,6 +1904,7 @@ function AdminOrders() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
       {open && <AdminOrderModal o={open} onClose={() => setOpen(null)} onStatus={setStatus} onPay={confirmPay} />}
     </AdminShell>
@@ -1986,7 +2031,7 @@ function AdminProductModal({ productId, onClose }) {
 }
 
 function AdminCategories() {
-  const { toast, reloadCatalog } = useShop();
+  const { toast, reloadCatalog, isMobile } = useShop();
   const [cats, setCats] = useState([]);
   const [edit, setEdit] = useState(null);
   const [name, setName] = useState('');
@@ -2016,6 +2061,23 @@ function AdminCategories() {
       action={<button className="btn btn-primary btn-sm" onClick={() => { setEdit({}); setName(''); }}><Icon name="plus" size={16} /> Add category</button>}>
       <div className="tbl-card">
         <div className="tbl-head"><h3>{cats.length} categories</h3></div>
+        {isMobile ? (
+          <div className="adm-list">
+            {cats.map(c => (
+              <div className="adm-item" key={c.id}>
+                <div className="ai-head">
+                  <div className="cust-cell"><div className="ca" style={{ borderRadius: 10 }}><Icon name={c.icon} size={16} /></div><span className="cell-strong">{c.name}</span></div>
+                  <Badge kind="b-green" icon="check">Active</Badge>
+                </div>
+                <div className="adm-kv"><span className="k">Products</span><span>{c.products} items</span></div>
+                <div className="adm-actions">
+                  <button className="btn btn-soft btn-sm" onClick={() => { setEdit(c); setName(c.name); }}><Icon name="pencil" size={15} /> Edit</button>
+                  <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)', flex: '0 0 auto' }} onClick={() => del(c.dbId)}><Icon name="trash-2" size={15} /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <div className="tbl-wrap">
           <table className="tbl">
             <thead><tr><th>Category</th><th>Products</th><th>Status</th><th>Actions</th></tr></thead>
@@ -2034,6 +2096,7 @@ function AdminCategories() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
       {edit && (
         <Modal title={edit.dbId ? 'Edit category' : 'Add category'} onClose={() => setEdit(null)}
@@ -2061,7 +2124,31 @@ function AdminProducts() {
     <AdminShell active="admin-products" title="Products"
       action={<button className="btn btn-primary btn-sm" onClick={() => setEdit({})}><Icon name="plus" size={16} /> Add product</button>}>
       <div className="tbl-card">
-        <div className="tbl-head"><h3>{prods.length} products</h3><div className="search" style={{ maxWidth: 240 }}><div className="inp-group"><span className="pfx"><Icon name="search" size={15} /></span><input placeholder="Search products…" /></div></div></div>
+        <div className="tbl-head"><h3>{prods.length} products</h3>{!isMobile && <div className="search" style={{ maxWidth: 240 }}><div className="inp-group"><span className="pfx"><Icon name="search" size={15} /></span><input placeholder="Search products…" /></div></div>}</div>
+        {isMobile ? (
+          <div className="adm-list">
+            {prods.map(p => (
+              <div className="adm-item" key={p.id}>
+                <div className="adm-prod">
+                  <div className="ap-img">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Thumb label="" tint={p.tint} style={{ height: '100%' }} />}</div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div className="cell-strong" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                    <div className="muted" style={{ fontSize: 11.5 }}>{p.brand} · {G.catName(p.cat)}</div>
+                    <div className="row gap-8" style={{ marginTop: 4, alignItems: 'baseline' }}>
+                      <span className="cell-strong" style={{ color: 'var(--teal)' }}><Tk>{G.priceOf(p)}</Tk></span>
+                      {p.disc > 0 && <span className="muted" style={{ fontSize: 11.5, textDecoration: 'line-through' }}><Tk>{p.price}</Tk></span>}
+                    </div>
+                  </div>
+                  <div>{p.stock <= 10 ? <Badge kind="b-amber">{p.stock} left</Badge> : <span className="muted" style={{ fontSize: 12.5 }}>{p.stock} in stock</span>}</div>
+                </div>
+                <div className="adm-actions">
+                  <button className="btn btn-soft btn-sm" onClick={() => setEdit(p)}><Icon name="pencil" size={15} /> Edit</button>
+                  <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)', flex: '0 0 auto' }} onClick={() => setDel(p)}><Icon name="trash-2" size={15} /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <div className="tbl-wrap">
           <table className="tbl">
             <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
@@ -2081,6 +2168,7 @@ function AdminProducts() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
       {edit && <ProductFormModal p={edit} onClose={() => setEdit(null)} onSave={async (np) => {
         try {
