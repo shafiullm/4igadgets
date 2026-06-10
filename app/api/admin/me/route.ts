@@ -1,4 +1,4 @@
-/* GET /api/admin/me — is the caller an authenticated admin? */
+/* GET /api/admin/me - is the caller an authenticated admin? */
 import { isAdmin } from "@/lib/auth/session";
 import { handle, json } from "@/lib/api";
 

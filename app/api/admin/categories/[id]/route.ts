@@ -1,6 +1,6 @@
 /* ============================================================
-   PATCH  /api/admin/categories/[id] — edit
-   DELETE /api/admin/categories/[id] — delete (cascades products)
+   PATCH  /api/admin/categories/[id] - edit
+   DELETE /api/admin/categories/[id] - delete (cascades products)
    ============================================================ */
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";

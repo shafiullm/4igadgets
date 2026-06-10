@@ -1,5 +1,5 @@
 /* ============================================================
-   GET /api/admin/customers/[id] — a registered customer's profile
+   GET /api/admin/customers/[id] - a registered customer's profile
    + order stats (admin only).
    ============================================================ */
 import { eq } from "drizzle-orm";

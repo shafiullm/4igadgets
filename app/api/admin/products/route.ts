@@ -1,6 +1,6 @@
 /* ============================================================
-   GET  /api/admin/products — list (UI shape)
-   POST /api/admin/products — create
+   GET  /api/admin/products - list (UI shape)
+   POST /api/admin/products - create
    ============================================================ */
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";

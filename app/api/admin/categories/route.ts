@@ -1,6 +1,6 @@
 /* ============================================================
-   GET  /api/admin/categories — list with product counts
-   POST /api/admin/categories — create
+   GET  /api/admin/categories - list with product counts
+   POST /api/admin/categories - create
    ============================================================ */
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";

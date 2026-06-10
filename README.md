@@ -1,4 +1,4 @@
-# 4iGadgets
+# 4iMart
 
 A full-stack e-commerce app for a Bangladeshi everything-store, built with
 **Next.js (App Router) + TypeScript**, deployed to **Cloudflare Workers** via the
@@ -150,7 +150,7 @@ npm run deploy                        # builds with OpenNext and deploys the Wor
 ### Option B — push to GitHub + connect to Cloudflare (auto-deploy)
 
 ```bash
-git init && git add -A && git commit -m "4iGadgets full-stack app"
+git init && git add -A && git commit -m "4iMart full-stack app"
 git branch -M main
 git remote add origin https://github.com/<you>/4igadgets.git
 git push -u origin main

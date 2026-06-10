@@ -1,11 +1,23 @@
 /* ============================================================
-   Invoice PDF generation (pure JS — runs on the Workers runtime).
+   Invoice PDF generation (pure JS - runs on the Workers runtime).
    Uses pdf-lib with the standard Helvetica font, so amounts are
    written as "BDT 1,490" (the ৳ glyph isn't in WinAnsi/Helvetica).
    ============================================================ */
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import {
+  PDFDocument,
+  StandardFonts,
+  rgb,
+  setLineJoin,
+  LineCapStyle,
+  LineJoinStyle,
+  type PDFFont,
+  type PDFPage,
+} from "pdf-lib";
 
-const TEAL = rgb(0x0f / 255, 0x4c / 255, 0x5c / 255);
+// 4iMart brand palette (matches public/assets/4imart-logo.svg).
+const TEAL = rgb(0x16 / 255, 0x50 / 255, 0x60 / 255);
+const BLUE = rgb(0x25 / 255, 0x96 / 255, 0xbe / 255);
+const ORANGE = rgb(0xee / 255, 0x84 / 255, 0x34 / 255);
 const INK = rgb(0.16, 0.16, 0.16);
 const MUTED = rgb(0.45, 0.43, 0.41);
 const LINE = rgb(0.85, 0.83, 0.79);
@@ -62,13 +74,30 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
   const rule = (yy: number, p: PDFPage = page) =>
     p.drawLine({ start: { x: M, y: yy }, end: { x: right, y: yy }, thickness: 1, color: LINE });
 
-  // ---- Header ----
-  text("4i", M, y, 24, bold, TEAL);
-  text("Gadgets", M + bold.widthOfTextAtSize("4i", 24), y, 24, bold, rgb(0xe7 / 255, 0x6f / 255, 0x51 / 255));
+  // ---- Header: 4iMart logo (vector mark + wordmark) ----
+  // The mark is the brand "4" with delivery wheels, drawn from the same SVG
+  // path data as public/assets/4imart-mark.svg.
+  const ls = 0.55; // logo scale (64px viewBox -> ~35pt)
+  const logoX = M - 12 * ls; // align the mark's leftmost ink with the margin
+  const logoTop = y + 26;
+  page.pushOperators(setLineJoin(LineJoinStyle.Round));
+  page.drawSvgPath("M32.3 12.7 L15.5 38 L43.5 38", {
+    x: logoX, y: logoTop, scale: ls,
+    borderColor: TEAL, borderWidth: 7 * ls, borderLineCap: LineCapStyle.Round,
+  });
+  page.drawSvgPath("M38 34 L38 42", {
+    x: logoX, y: logoTop, scale: ls,
+    borderColor: TEAL, borderWidth: 7 * ls, borderLineCap: LineCapStyle.Round,
+  });
+  page.drawCircle({ x: logoX + 20 * ls, y: logoTop - 52 * ls, size: 4.5 * ls, color: ORANGE });
+  page.drawCircle({ x: logoX + 38 * ls, y: logoTop - 52 * ls, size: 4.5 * ls, color: ORANGE });
+  const wordX = logoX + 50 * ls + 8;
+  text("4i", wordX, y, 22, bold, BLUE);
+  text("Mart", wordX + bold.widthOfTextAtSize("4i", 22), y, 22, bold, TEAL);
   textRight("INVOICE", right, y + 3, 20, bold, INK);
   y -= 16;
   text("Genuine products, delivered across Bangladesh", M, y, 9, font, MUTED);
-  textRight("hello@4igadgets.bd", right, y, 9, font, MUTED);
+  textRight("hello@4imart.bd", right, y, 9, font, MUTED);
   y -= 14;
   rule(y);
   y -= 22;
@@ -134,8 +163,8 @@ export async function generateInvoicePdf(data: InvoiceData): Promise<Uint8Array>
   }
 
   // ---- Footer ----
-  text("Thank you for shopping with 4iGadgets!", M, 70, 10, bold, TEAL);
-  text("Questions about this order? Contact support at hello@4igadgets.bd or 16xxx (9am-9pm).", M, 55, 8.5, font, MUTED);
+  text("Thank you for shopping with 4iMart!", M, 70, 10, bold, TEAL);
+  text("Questions about this order? Contact support at hello@4imart.bd or 16xxx (9am-9pm).", M, 55, 8.5, font, MUTED);
   rule(44);
   text("This is a computer-generated invoice and does not require a signature.", M, 32, 8, font, MUTED);
 

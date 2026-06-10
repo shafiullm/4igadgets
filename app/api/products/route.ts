@@ -1,4 +1,4 @@
-/* GET /api/products?category=<slug> — products, optionally filtered by category. */
+/* GET /api/products?category=<slug> - products, optionally filtered by category. */
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { categories, products } from "@/lib/db/schema";

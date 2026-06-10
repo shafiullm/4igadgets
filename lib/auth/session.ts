@@ -1,5 +1,5 @@
 /* ============================================================
-   Session helpers — httpOnly cookie sessions for customers + admin.
+   Session helpers - httpOnly cookie sessions for customers + admin.
    ============================================================ */
 import { cookies } from "next/headers";
 import { getCloudflareContext } from "@opennextjs/cloudflare";

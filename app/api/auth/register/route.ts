@@ -1,4 +1,4 @@
-/* POST /api/auth/register — create a customer account + start a session. */
+/* POST /api/auth/register - create a customer account + start a session. */
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { users } from "@/lib/db/schema";

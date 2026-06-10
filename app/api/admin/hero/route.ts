@@ -1,6 +1,6 @@
 /* ============================================================
-   GET /api/admin/hero — current hero config
-   PUT /api/admin/hero — save hero config (admin only)
+   GET /api/admin/hero - current hero config
+   PUT /api/admin/hero - save hero config (admin only)
    ============================================================ */
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";

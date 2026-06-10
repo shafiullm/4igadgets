@@ -1,5 +1,5 @@
 /* ============================================================
-   Site settings — editable homepage content stored in D1.
+   Site settings - editable homepage content stored in D1.
    Currently: the homepage hero. Stored as JSON under key "hero".
    ============================================================ */
 import { eq } from "drizzle-orm";

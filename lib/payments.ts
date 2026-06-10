@@ -1,5 +1,5 @@
 /* ============================================================
-   Payments — manual flow (no gateway). Structured so a real
+   Payments - manual flow (no gateway). Structured so a real
    gateway (bKash/Nagad API) can be slotted in later behind the
    same interface.
    ============================================================ */

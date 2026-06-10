@@ -1,4 +1,4 @@
-/* GET /api/catalog — all categories + products in UI shape. */
+/* GET /api/catalog - all categories + products in UI shape. */
 import { getDb } from "@/lib/db";
 import { categories, products } from "@/lib/db/schema";
 import { serializeCategory, serializeProduct } from "@/lib/serialize";
