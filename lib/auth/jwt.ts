@@ -1,5 +1,5 @@
 /* ============================================================
-   Minimal JWT (HS256) using Web Crypto — Workers-compatible.
+   Minimal JWT (HS256) using Web Crypto - Workers-compatible.
    No Node-only crypto modules. Used for stateless session cookies.
    ============================================================ */
 

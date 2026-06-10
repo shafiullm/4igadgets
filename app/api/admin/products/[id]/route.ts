@@ -1,6 +1,6 @@
 /* ============================================================
-   PATCH  /api/admin/products/[id] — edit
-   DELETE /api/admin/products/[id] — delete
+   PATCH  /api/admin/products/[id] - edit
+   DELETE /api/admin/products/[id] - delete
    ============================================================ */
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";

@@ -1,6 +1,6 @@
 /* ============================================================
-   GET /api/admin/banner — current banner config
-   PUT /api/admin/banner — save banner config (admin only)
+   GET /api/admin/banner - current banner config
+   PUT /api/admin/banner - save banner config (admin only)
    ============================================================ */
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";

@@ -1,4 +1,4 @@
-/* GET /api/auth/me — current customer session (or null). */
+/* GET /api/auth/me - current customer session (or null). */
 import { getSessionUser } from "@/lib/auth/session";
 import { handle, json } from "@/lib/api";
 

@@ -8,7 +8,7 @@
 AUTH_SECRET="dev-only-change-me-to-a-long-random-string"
 
 # Admin panel credentials (separate from customer accounts).
-ADMIN_EMAIL="admin@4igadgets.bd"
+ADMIN_EMAIL="admin@4imart.bd"
 ADMIN_PASSWORD="admin1234"
 
 # Manual payment numbers shown to customers at checkout (merchant numbers).

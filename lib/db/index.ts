@@ -1,5 +1,5 @@
 /* ============================================================
-   4iGadgets — D1 + Drizzle connection helper
+   4iMart - D1 + Drizzle connection helper
    ============================================================ */
 import { drizzle } from "drizzle-orm/d1";
 import { getCloudflareContext } from "@opennextjs/cloudflare";

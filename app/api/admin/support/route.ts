@@ -1,6 +1,6 @@
 /* ============================================================
-   GET  /api/admin/support — all conversations (grouped by customer)
-   POST /api/admin/support — admin replies   Body: { userId, body }
+   GET  /api/admin/support - all conversations (grouped by customer)
+   POST /api/admin/support - admin replies   Body: { userId, body }
    ============================================================ */
 import { asc, eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";

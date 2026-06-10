@@ -1,5 +1,5 @@
 /* ============================================================
-   Icon registry — real React-owned SVGs from lucide-react.
+   Icon registry - real React-owned SVGs from lucide-react.
    Replaces the previous CDN `window.lucide.createIcons()` DOM-scan,
    which mutated React-managed nodes and caused removeChild crashes
    (e.g. on the polling admin Support screen). Only the icons the app

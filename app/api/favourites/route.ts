@@ -1,6 +1,6 @@
 /* ============================================================
-   GET  /api/favourites — productIds the current user has liked
-   POST /api/favourites — toggle a like   Body: { productId }
+   GET  /api/favourites - productIds the current user has liked
+   POST /api/favourites - toggle a like   Body: { productId }
    Login required (guests are prompted to log in on the client).
    ============================================================ */
 import { and, eq } from "drizzle-orm";

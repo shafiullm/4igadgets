@@ -1,4 +1,4 @@
-/* POST /api/admin/login — predefined credentials from Cloudflare secrets. */
+/* POST /api/admin/login - predefined credentials from Cloudflare secrets. */
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createAdminSession } from "@/lib/auth/session";
 import { handle, json, unauthorized, badRequest } from "@/lib/api";

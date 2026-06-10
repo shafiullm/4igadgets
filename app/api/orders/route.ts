@@ -1,6 +1,6 @@
 /* ============================================================
-   POST /api/orders  — place an order (guest or logged-in)
-   GET  /api/orders  — current user's order history
+   POST /api/orders  - place an order (guest or logged-in)
+   GET  /api/orders  - current user's order history
    ============================================================ */
 import { eq, inArray, desc } from "drizzle-orm";
 import { getDb } from "@/lib/db";

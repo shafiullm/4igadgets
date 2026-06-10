@@ -1,6 +1,6 @@
 /* ============================================================
-   GET  /api/support  — the logged-in customer's chat thread
-   POST /api/support  — customer sends a message  Body: { body }
+   GET  /api/support  - the logged-in customer's chat thread
+   POST /api/support  - customer sends a message  Body: { body }
    ============================================================ */
 import { eq, asc } from "drizzle-orm";
 import { getDb } from "@/lib/db";

@@ -1,5 +1,5 @@
 /* ============================================================
-   4iGadgets — Drizzle schema (SQLite / Cloudflare D1)
+   4iMart - Drizzle schema (SQLite / Cloudflare D1)
    ============================================================ */
 import { sqliteTable, text, integer, real, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
@@ -121,7 +121,7 @@ export const supportMessages = sqliteTable("support_messages", {
 
 export type SupportSender = (typeof SUPPORT_SENDERS)[number];
 
-// ---- Favourites (wishlist) — one row per (user, product) ----
+// ---- Favourites (wishlist) - one row per (user, product) ----
 export const favourites = sqliteTable(
   "favourites",
   {
@@ -139,7 +139,7 @@ export const favourites = sqliteTable(
   (t) => [uniqueIndex("favourites_user_product").on(t.userId, t.productId)],
 );
 
-// ---- Reviews / ratings — one review per (user, product) ----
+// ---- Reviews / ratings - one review per (user, product) ----
 export const reviews = sqliteTable(
   "reviews",
   {

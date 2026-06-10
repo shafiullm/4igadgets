@@ -1,4 +1,4 @@
-/* POST /api/auth/login — email OR phone + password. */
+/* POST /api/auth/login - email OR phone + password. */
 import { eq, or } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { users } from "@/lib/db/schema";

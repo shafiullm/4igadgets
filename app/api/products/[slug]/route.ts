@@ -1,6 +1,6 @@
 /* ============================================================
-   GET  /api/products/[slug] — product detail + reviews + my review
-   POST /api/products/[slug] — submit/update my review (login required)
+   GET  /api/products/[slug] - product detail + reviews + my review
+   POST /api/products/[slug] - submit/update my review (login required)
                                Body: { rating: 1..5, comment?: string }
    ============================================================ */
 import { eq, and, ne } from "drizzle-orm";

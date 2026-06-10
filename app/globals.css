@@ -1,18 +1,22 @@
 /* ============================================================
-   4iGadgets — Design System
+   4iMart - Design System
    ============================================================ */
 :root{
-  /* Brand */
-  --teal:#0F4C5C;
-  --teal-700:#0c3e4b;
-  --teal-800:#082c36;
-  --teal-50:#e8f0f2;
-  --teal-100:#d3e3e6;
+  /* Brand (from the 4iMart logo: deep teal mark + "Mart", bright blue "4i",
+     orange wheels; dark surface #0a2730 with #f3f7f8 / #7ecbe8 accents) */
+  --teal:#165060;
+  --teal-700:#11414e;
+  --teal-800:#0a2730;
+  --teal-50:#e7f1f4;
+  --teal-100:#d1e5eb;
 
-  --amber:#E76F51;
-  --amber-600:#d65f41;
-  --amber-50:#fcefe9;
-  --amber-100:#f8ddd3;
+  --blue:#2596be;
+  --blue-soft:#7ecbe8;
+
+  --amber:#ee8434;
+  --amber-600:#d96f1e;
+  --amber-50:#fdf2e7;
+  --amber-100:#fae0c5;
 
   /* Neutrals (warm) */
   --cream:#FAF7F2;
@@ -154,12 +158,12 @@ a{color:inherit;text-decoration:none;}
 
 /* ---------- Image placeholder ---------- */
 .ph{position:relative;overflow:hidden;background:
-  repeating-linear-gradient(135deg,rgba(15,76,92,.05) 0 11px,rgba(15,76,92,.025) 11px 22px),var(--cream-2);
+  repeating-linear-gradient(135deg,rgba(22,80,96,.05) 0 11px,rgba(22,80,96,.025) 11px 22px),var(--cream-2);
   display:flex;align-items:center;justify-content:center;}
 .ph .ph-lbl{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;letter-spacing:.03em;
   color:#9a8f7d;background:rgba(255,255,255,.72);padding:4px 8px;border-radius:6px;text-transform:lowercase;}
-.ph.tint-a{background:repeating-linear-gradient(135deg,rgba(231,111,81,.07) 0 11px,rgba(231,111,81,.03) 11px 22px),#f6ece6;}
-.ph.tint-b{background:repeating-linear-gradient(135deg,rgba(15,76,92,.07) 0 11px,rgba(15,76,92,.03) 11px 22px),#e9eef0;}
+.ph.tint-a{background:repeating-linear-gradient(135deg,rgba(238,132,52,.07) 0 11px,rgba(238,132,52,.03) 11px 22px),#f6ece6;}
+.ph.tint-b{background:repeating-linear-gradient(135deg,rgba(22,80,96,.07) 0 11px,rgba(22,80,96,.03) 11px 22px),#e9eef0;}
 
 /* ---------- Form ---------- */
 .field{display:flex;flex-direction:column;gap:7px;}
@@ -236,7 +240,7 @@ textarea.inp{resize:vertical;min-height:90px;}
 .mobile .hero-b .hb-visual{min-height:200px;}
 
 /* hero C - banner minimal */
-.hero-c{position:relative;border-radius:var(--r-xl);overflow:hidden;background:linear-gradient(110deg,#103e4a,#0F4C5C 45%,#15616d);color:#fff;padding:54px 48px;}
+.hero-c{position:relative;border-radius:var(--r-xl);overflow:hidden;background:linear-gradient(110deg,#0d3a45,#165060 45%,#1d6b82);color:#fff;padding:54px 48px;}
 .mobile .hero-c{padding:34px 24px;}
 .hero-c h1{font-size:44px;line-height:1.05;letter-spacing:-.03em;font-weight:800;margin:0 0 16px;max-width:620px;}
 .mobile .hero-c h1{font-size:30px;}
@@ -246,7 +250,7 @@ textarea.inp{resize:vertical;min-height:90px;}
 /* ---------- Section ---------- */
 .section{padding:42px 0;}
 .mobile .section{padding:28px 0;}
-/* when wrap+section combine, the section padding shorthand wipes wrap's side padding — restore it */
+/* when wrap+section combine, the section padding shorthand wipes wrap's side padding - restore it */
 .wrap.section{padding-left:22px;padding-right:22px;}
 .mobile .wrap.section{padding-left:16px;padding-right:16px;}
 .sec-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px;gap:16px;}
@@ -576,7 +580,7 @@ table.tbl tr:hover td{background:var(--cream);}
 .banner-preview-label{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;}
 
 /* ============================================================
-   PRODUCTION LAYOUT — real full-window site (replaces the
+   PRODUCTION LAYOUT - real full-window site (replaces the
    prototype's presenter frame / device mockup). The interactive
    app mounts inside .app-root; the .mobile class is toggled by
    viewport width so all existing ".mobile ..." styles apply.
@@ -605,7 +609,7 @@ table.tbl tr:hover td{background:var(--cream);}
 .app-root.mobile .m-tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;}
 
 /* ============================================================
-   ADMIN — mobile card lists (replace horizontally-scrolling
+   ADMIN - mobile card lists (replace horizontally-scrolling
    tables on phones; desktop keeps the tables).
    ============================================================ */
 .adm-list{display:flex;flex-direction:column;gap:12px;padding:14px;}
@@ -619,3 +623,54 @@ table.tbl tr:hover td{background:var(--cream);}
 .adm-actions .act-btn{flex:0 0 auto;width:40px;height:38px;}
 .adm-prod{display:flex;gap:12px;align-items:center;}
 .adm-prod .ap-img{width:52px;height:52px;border-radius:10px;overflow:hidden;flex:0 0 52px;border:1px solid var(--line);}
+
+/* ============================================================
+   4iMart LOADER - animated brand mark shown while the store
+   hydrates. The "4" draws in, the stem pops, the wheels bounce,
+   then it loops. (Icon-only version of the brand loader.)
+   ============================================================ */
+.fourimart-loader{
+  --t:1.8s; /* one animation cycle */
+  width:110px;height:110px;
+}
+.fourimart-loader .diag{
+  stroke-dasharray:59;stroke-dashoffset:59;
+  animation:fim-draw var(--t) cubic-bezier(0.65,0,0.35,1) infinite;
+}
+.fourimart-loader .stem{
+  transform-origin:38px 38px;transform:scaleY(0);
+  animation:fim-stem var(--t) ease-out infinite;
+}
+.fourimart-loader .wheel{opacity:0;animation:fim-wheel var(--t) ease-in-out infinite;}
+.fourimart-loader .wheel.w2{animation-name:fim-wheel2;}
+
+@keyframes fim-draw{
+  0%       {stroke-dashoffset:59;opacity:1;}
+  38%, 88% {stroke-dashoffset:0; opacity:1;}
+  100%     {stroke-dashoffset:0; opacity:0;}
+}
+@keyframes fim-stem{
+  0%, 34%  {transform:scaleY(0);opacity:1;}
+  46%, 88% {transform:scaleY(1);opacity:1;}
+  100%     {transform:scaleY(1);opacity:0;}
+}
+@keyframes fim-wheel{
+  0%, 44%   {opacity:0;transform:translateY(0);}
+  50%, 88%  {opacity:1;}
+  62%       {transform:translateY(-4px);}
+  72%, 100% {transform:translateY(0);}
+  100%      {opacity:0;}
+}
+@keyframes fim-wheel2{
+  0%, 50%   {opacity:0;transform:translateY(0);}
+  56%, 88%  {opacity:1;}
+  70%       {transform:translateY(-4px);}
+  80%, 100% {transform:translateY(0);}
+  100%      {opacity:0;}
+}
+@media (prefers-reduced-motion: reduce){
+  .fourimart-loader .diag{animation:none;stroke-dashoffset:0;}
+  .fourimart-loader .stem{animation:none;transform:scaleY(1);}
+  .fourimart-loader .wheel{animation:fim-pulse 1.6s ease-in-out infinite;opacity:1;transform:none;}
+  @keyframes fim-pulse{50%{opacity:0.35;}}
+}

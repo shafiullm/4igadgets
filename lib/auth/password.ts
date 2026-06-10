@@ -1,5 +1,5 @@
 /* ============================================================
-   Password hashing — Web Crypto PBKDF2 (Workers-compatible)
+   Password hashing - Web Crypto PBKDF2 (Workers-compatible)
    ------------------------------------------------------------
    We deliberately avoid native bcrypt (does not run on the Workers
    runtime). PBKDF2 is provided by the Web Crypto API which IS available

@@ -1,6 +1,6 @@
 "use client";
 /* ============================================================
-   4iGadgets — interactive storefront + admin (client).
+   4iMart - interactive storefront + admin (client).
 
    This is the exported prototype UI, ported verbatim into Next.js.
    The ONLY functional change vs. the prototype is the data layer:
@@ -35,7 +35,7 @@ async function api(path, opts) {
 }
 
 /* ============================================================
-   Data layer (G) — static config + arrays hydrated from the API.
+   Data layer (G) - static config + arrays hydrated from the API.
    ============================================================ */
 const taka = (n) => "৳" + Number(n).toLocaleString("en-IN");
 
@@ -103,7 +103,7 @@ function applyCatalog(data) {
 
 /* ===== components.jsx ===== */
 /* ============================================================
-   4iGadgets — Shared components
+   4iMart - Shared components
    ============================================================ */
 
 // ---- App context (nav, cart, auth, toast) ----
@@ -114,11 +114,53 @@ const useShop = () => useContext(Shop);
 // Keeps `data-lucide` so the existing CSS size rules ([data-lucide]{...},
 // .stars [data-lucide], .es-ic [data-lucide], etc.) still apply, and applies
 // an inline width/height when a `size` is given (overrides the CSS), matching
-// the original prototype exactly — but without any DOM mutation.
+// the original prototype exactly - but without any DOM mutation.
 function Icon({ name, size, className, style }) {
   const Cmp = ICONS[name] || FallbackIcon;
   const s = size ? { width: size, height: size } : null;
   return <Cmp data-lucide={name} className={'ic ' + (className || '')} style={{ ...s, ...style }} />;
+}
+
+// ---- Brand logo (4iMart) ----
+// Inline SVG versions of /public/assets/4imart-logo*.svg so the logo renders
+// crisply at any size and on any background without extra requests.
+const BRAND_PATHS = {
+  diag: "M32.3 12.7 L15.5 38 L43.5 38",
+  stem: "M38 34 L38 42",
+  fourI:
+    "M84.99 39.94L71.05 39.94L71.05 36.58L81.13 17.47L87.43 17.47L77.98 34.95L84.99 34.95L84.99 28.18L90.62 28.18L90.62 34.95L94.32 34.95L94.32 39.94L90.62 39.94L90.62 47L84.99 47L84.99 39.94ZM100.16 23.44L100.16 23.44Q98.81 23.44 97.93 22.54Q97.05 21.63 97.05 20.29L97.05 20.29Q97.05 18.99 97.93 18.06Q98.81 17.14 100.16 17.14L100.16 17.14Q101.50 17.14 102.38 18.06Q103.26 18.99 103.26 20.29L103.26 20.29Q103.26 21.63 102.38 22.54Q101.50 23.44 100.16 23.44ZM102.93 47L97.38 47L97.38 26.71L102.93 26.71L102.93 47Z",
+  mart:
+    "M113.68 47L107.97 47L107.97 17.47L112 17.47L122.79 34.78L133.59 17.47L137.62 17.47L137.62 47L131.95 47L131.95 29.40L124.73 40.95L120.86 40.95L113.68 29.36L113.68 47ZM151.14 47.42L151.14 47.42Q148.37 47.42 146.17 46.03Q143.96 44.65 142.68 42.25Q141.40 39.86 141.40 36.88L141.40 36.88Q141.40 33.90 142.68 31.48Q143.96 29.07 146.17 27.68Q148.37 26.29 151.10 26.29L151.10 26.29Q152.91 26.29 154.44 26.92Q155.97 27.55 157.02 28.65L157.02 28.65L157.02 26.71L162.48 26.71L162.48 47L157.02 47L157.02 45.07Q155.97 46.16 154.46 46.79Q152.95 47.42 151.14 47.42ZM152.15 42.34L152.15 42.34Q154.46 42.34 155.89 40.80Q157.32 39.27 157.32 36.84L157.32 36.84Q157.32 34.44 155.89 32.91Q154.46 31.38 152.15 31.38L152.15 31.38Q149.88 31.38 148.46 32.91Q147.03 34.44 147.03 36.84L147.03 36.84Q147.03 39.27 148.46 40.80Q149.88 42.34 152.15 42.34ZM172.44 47L166.94 47L166.94 26.71L172.44 26.71L172.44 28.52Q173.36 27.47 174.66 26.88Q175.97 26.29 177.69 26.29L177.69 26.29Q180.63 26.29 182.48 28.35L182.48 28.35L179.03 32.30Q178.02 31.29 176.43 31.29L176.43 31.29Q174.62 31.29 173.53 32.41Q172.44 33.52 172.44 35.79L172.44 35.79L172.44 47ZM192.64 47L187.14 47L187.14 31.54L182.39 31.54L182.39 26.71L187.14 26.71L187.14 18.27L192.64 18.27L192.64 26.71L197.39 26.71L197.39 31.54L192.64 31.54L192.64 47Z",
+};
+
+// Icon-only mark (the "4" with delivery wheels).
+function LogoMark({ size = 28, color = "var(--teal)", wheels = "var(--amber)", style }) {
+  return (
+    <svg viewBox="0 0 64 64" width={size} height={size} fill="none" aria-hidden="true" style={style}>
+      <path d={BRAND_PATHS.diag} stroke={color} strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={BRAND_PATHS.stem} stroke={color} strokeWidth="7" strokeLinecap="round" />
+      <circle cx="20" cy="52" r="4.5" fill={wheels} />
+      <circle cx="38" cy="52" r="4.5" fill={wheels} />
+    </svg>
+  );
+}
+
+// Full lockup: mark + "4i" + "Mart" wordmark. `dark` switches to the
+// light-on-dark palette (text #f3f7f8, "4i"/mark accents #7ecbe8).
+function Logo({ height = 30, dark, style }) {
+  const mark = dark ? "#f3f7f8" : "var(--teal)";
+  const fourI = dark ? "#7ecbe8" : "var(--blue)";
+  const mart = dark ? "#f3f7f8" : "var(--teal)";
+  return (
+    <svg viewBox="8 8 192 48" height={height} fill="none" role="img" aria-label="4iMart" style={{ display: "block", ...style }}>
+      <path d={BRAND_PATHS.diag} stroke={mark} strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={BRAND_PATHS.stem} stroke={mark} strokeWidth="7" strokeLinecap="round" />
+      <circle cx="20" cy="52" r="4.5" fill="var(--amber)" />
+      <circle cx="38" cy="52" r="4.5" fill="var(--amber)" />
+      <path d={BRAND_PATHS.fourI} fill={fourI} />
+      <path d={BRAND_PATHS.mart} fill={mart} />
+    </svg>
+  );
 }
 
 // ---- Image placeholder ----
@@ -141,7 +183,7 @@ function Stars({ rating }) {
   return (
     <span className="stars">
       {[0, 1, 2, 3, 4].map(i => (
-        <Icon key={i} name="star" style={{ fill: i < Math.round(rating) ? '#E76F51' : 'none', color: i < Math.round(rating) ? '#E76F51' : '#d8d2c6' }} />
+        <Icon key={i} name="star" style={{ fill: i < Math.round(rating) ? '#ee8434' : 'none', color: i < Math.round(rating) ? '#ee8434' : '#d8d2c6' }} />
       ))}
     </span>
   );
@@ -175,7 +217,7 @@ function ProductCard({ p }) {
       <div className="pc-img">
         {off > 0 && <span className="sale-tag">-{off}%</span>}
         <button className="pc-fav" title={liked ? 'Remove from favourites' : 'Save to favourites'} onClick={(e) => { e.stopPropagation(); toggleFav(p.id); }}>
-          <Icon name="heart" size={16} style={liked ? { fill: '#E76F51', color: '#E76F51' } : null} />
+          <Icon name="heart" size={16} style={liked ? { fill: '#ee8434', color: '#ee8434' } : null} />
         </button>
         {p.imageUrl
           ? <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -231,7 +273,7 @@ function Header() {
       <header className="hdr">
         <div className="deliver-strip">🚚 Free delivery over <b>৳2,000</b> · <b>Cash on Delivery</b> available</div>
         <div className="wrap hdr-top" style={{ height: 60, gap: 12 }}>
-          <div className="logo" onClick={() => navigate('home')} style={{ fontSize: 19 }}>4i<span className="g">Gadgets</span></div>
+          <div className="logo" onClick={() => navigate('home')}><Logo height={26} /></div>
           <div className="pb-spacer" />
           <button className="icon-btn" onClick={() => navigate('category')}><Icon name="search" size={19} /></button>
           <button className="icon-btn" onClick={() => navigate('cart')}>
@@ -246,7 +288,7 @@ function Header() {
     <header className="hdr">
       <div className="deliver-strip">🚚 Free delivery on orders over <b>৳2,000</b> across Bangladesh · <b>Cash on Delivery</b>, bKash & Nagad accepted</div>
       <div className="wrap hdr-top">
-        <div className="logo" onClick={() => navigate('home')}>4i<span className="g">Gadgets</span></div>
+        <div className="logo" onClick={() => navigate('home')}><Logo height={32} /></div>
         <div className="search">
           <div className="inp-group">
             <span className="pfx"><Icon name="search" size={17} /></span>
@@ -309,7 +351,7 @@ function Footer() {
     <footer className="ftr">
       <div className="wrap ftr-main">
         <div>
-          <div className="logo" style={{ marginBottom: 14 }}>4i<span className="g">Gadgets</span></div>
+          <div className="logo" style={{ marginBottom: 14 }}><Logo dark height={30} /></div>
           <p style={{ fontSize: 13, color: '#a9c1c5', lineHeight: 1.6, margin: '0 0 16px', maxWidth: 300 }}>
             Bangladesh's friendly everything store. Genuine products, honest prices, and delivery to your door পুরো দেশজুড়ে।
           </p>
@@ -326,13 +368,13 @@ function Footer() {
         </div>
         <div>
           <h5>Reach us</h5>
-          <li><Icon name="phone" size={13} style={{ marginRight: 6 }} />01600000034 (9am–9pm)</li>
-          <li><Icon name="mail" size={13} style={{ marginRight: 6 }} />hello@4igadgets.bd</li>
+          <li><Icon name="phone" size={13} style={{ marginRight: 6 }} />01600000034 (9am-9pm)</li>
+          <li><Icon name="mail" size={13} style={{ marginRight: 6 }} />hello@4imart.bd</li>
           <li><Icon name="map-pin" size={13} style={{ marginRight: 6 }} />ECB Chattar, Dhaka 1206</li>
         </div>
       </div>
       <div className="wrap ftr-bottom">
-        <span>© 2026 4iGadgets. All rights reserved.</span>
+        <span>© 2026 4iMart. All rights reserved.</span>
       </div>
     </footer>
   );
@@ -420,7 +462,7 @@ function CustomerShell({ children }) {
 
 /* ===== screens_shop.jsx ===== */
 /* ============================================================
-   4iGadgets — Customer screens
+   4iMart - Customer screens
    ============================================================ */
 
 // ---------- HERO (admin-editable: layout A/B/C + content + image) ----------
@@ -495,8 +537,8 @@ function Hero({ cfg }) {
   if (c.layout === 'C') {
     return (
       <div className="hero-c">
-        <div className="blob" style={{ width: 280, height: 280, background: '#1c7a8c', top: -80, right: -40 }} />
-        <div className="blob" style={{ width: 180, height: 180, background: '#E76F51', bottom: -70, right: 180, opacity: .35 }} />
+        <div className="blob" style={{ width: 280, height: 280, background: '#2596be', top: -80, right: -40 }} />
+        <div className="blob" style={{ width: 180, height: 180, background: '#ee8434', bottom: -70, right: 180, opacity: .35 }} />
         <div style={{ position: 'relative', zIndex: 2 }}>
           {c.eyebrow && <span className="hero-eyebrow"><span className="dot" /> {c.eyebrow}</span>}
           <h1><HeroLines text={c.title} />{c.titleAccent ? <> {c.titleAccent}</> : null}</h1>
@@ -571,7 +613,7 @@ function Home() {
         </div>
       </section>
 
-      {/* marketing banner — editable from the admin dashboard */}
+      {/* marketing banner - editable from the admin dashboard */}
       <MarketingBanner />
 
       <section className="section">
@@ -688,7 +730,7 @@ function StarInput({ value, onChange }) {
     <span style={{ display: 'inline-flex', gap: 3, cursor: 'pointer' }} onMouseLeave={() => setHover(0)}>
       {[1, 2, 3, 4, 5].map(i => (
         <span key={i} onMouseEnter={() => setHover(i)} onClick={() => onChange(i)}>
-          <Icon name="star" size={26} style={{ fill: i <= cur ? '#E76F51' : 'none', color: i <= cur ? '#E76F51' : '#d8d2c6' }} />
+          <Icon name="star" size={26} style={{ fill: i <= cur ? '#ee8434' : 'none', color: i <= cur ? '#ee8434' : '#d8d2c6' }} />
         </span>
       ))}
     </span>
@@ -751,11 +793,11 @@ function Product() {
               <button className="btn btn-primary btn-lg" style={{ flex: 1 }} onClick={() => addToCart(p.id, qty)}><Icon name="shopping-cart" size={18} /> Add to Cart</button>
               <button className="btn btn-accent btn-lg" onClick={() => { addToCart(p.id, qty); navigate('cart'); }}>Buy Now</button>
               <button className="btn btn-ghost btn-icon btn-lg" title={liked ? 'Remove from favourites' : 'Save to favourites'} onClick={() => toggleFav(p.id)}>
-                <Icon name="heart" size={18} style={liked ? { fill: '#E76F51', color: '#E76F51' } : null} />
+                <Icon name="heart" size={18} style={liked ? { fill: '#ee8434', color: '#ee8434' } : null} />
               </button>
             </div>
             <div className="row gap-16 muted" style={{ fontSize: 12.5, flexWrap: 'wrap' }}>
-              <span className="row gap-6"><Icon name="truck" size={15} /> Delivered in 2–4 days</span>
+              <span className="row gap-6"><Icon name="truck" size={15} /> Delivered in 2-4 days</span>
               <span className="row gap-6"><Icon name="shield-check" size={15} /> Official warranty</span>
               <span className="row gap-6"><Icon name="rotate-ccw" size={15} /> 7-day replacement</span>
             </div>
@@ -768,7 +810,7 @@ function Product() {
           <div className="card card-pad">
             <div className="row gap-20" style={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
               <div style={{ textAlign: 'center', minWidth: 120 }}>
-                <div style={{ fontSize: 38, fontWeight: 800, color: 'var(--teal)', lineHeight: 1 }}>{p.reviews ? p.rating.toFixed(1) : '—'}</div>
+                <div style={{ fontSize: 38, fontWeight: 800, color: 'var(--teal)', lineHeight: 1 }}>{p.reviews ? p.rating.toFixed(1) : '-'}</div>
                 <div style={{ margin: '6px 0' }}><Stars rating={p.rating} /></div>
                 <div className="muted" style={{ fontSize: 12 }}>{p.reviews} review{p.reviews === 1 ? '' : 's'}</div>
               </div>
@@ -789,7 +831,7 @@ function Product() {
             </div>
             <div className="divider" />
             {data.reviews.length === 0 ? (
-              <div className="muted" style={{ fontSize: 14, padding: '6px 0' }}>No reviews yet — be the first to review this product.</div>
+              <div className="muted" style={{ fontSize: 14, padding: '6px 0' }}>No reviews yet. Be the first to review this product.</div>
             ) : data.reviews.map(rv => (
               <div key={rv.id} style={{ padding: '12px 0', borderBottom: '1px solid var(--line)' }}>
                 <div className="between" style={{ flexWrap: 'wrap', gap: 8 }}>
@@ -814,7 +856,7 @@ function Product() {
 
 /* ===== screens_checkout.jsx ===== */
 /* ============================================================
-   4iGadgets — Cart, Checkout, Confirmation
+   4iMart - Cart, Checkout, Confirmation
    ============================================================ */
 
 function Cart() {
@@ -1059,7 +1101,7 @@ function Confirmation() {
 
 /* ===== screens_account.jsx ===== */
 /* ============================================================
-   4iGadgets — Auth + Account + Support
+   4iMart - Auth + Account + Support
    ============================================================ */
 
 function Login() {
@@ -1072,7 +1114,7 @@ function Login() {
     <CustomerShell>
       <div className="auth-wrap">
         <div className="auth-card fade-in">
-          {!isMobile && <div className="logo" style={{ justifyContent: 'center', marginBottom: 18 }}>4i<span className="g">Gadgets</span></div>}
+          {!isMobile && <div className="logo" style={{ justifyContent: 'center', marginBottom: 18 }}><Logo height={32} /></div>}
           <h1>Welcome back 👋</h1>
           <p className="sub">Login to track orders, save favourites & checkout faster.</p>
           <div className="pill-toggle" style={{ marginBottom: 18, width: '100%' }}>
@@ -1091,7 +1133,7 @@ function Login() {
             <span className="linkish" style={{ fontSize: 12.5 }}>Forgot password?</span>
           </div>
           <button className="btn btn-primary btn-block btn-lg" onClick={submit}>Login <Icon name="arrow-right" size={17} /></button>
-          <p className="auth-foot">New to 4iGadgets? <span className="linkish" onClick={() => navigate('register')}>Create an account</span></p>
+          <p className="auth-foot">New to 4iMart? <span className="linkish" onClick={() => navigate('register')}>Create an account</span></p>
         </div>
       </div>
     </CustomerShell>
@@ -1106,7 +1148,7 @@ function Register() {
     <CustomerShell>
       <div className="auth-wrap">
         <div className="auth-card fade-in">
-          {!isMobile && <div className="logo" style={{ justifyContent: 'center', marginBottom: 18 }}>4i<span className="g">Gadgets</span></div>}
+          {!isMobile && <div className="logo" style={{ justifyContent: 'center', marginBottom: 18 }}><Logo height={32} /></div>}
           <h1>Create your account</h1>
           <p className="sub">Join 50,000+ shoppers across Bangladesh.</p>
           <Field label="Full name"><input className="inp" placeholder="Your name" value={f.name} onChange={set('name')} /></Field>
@@ -1265,7 +1307,7 @@ function OrderDetailModal({ o, onClose }) {
 function Support() {
   const { user, navigate, isMobile, toast } = useShop();
   const fmtTime = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  const greeting = { who: 'them', t: 'Assalamu alaikum! 👋 This is the 4iGadgets support team. How can we help you today?', time: '' };
+  const greeting = { who: 'them', t: 'Assalamu alaikum! 👋 This is the 4iMart support team. How can we help you today?', time: '' };
   const [thread, setThread] = useState([]); // chat messages from the API
   const [val, setVal] = useState('');
   const bodyRef = useRef(null);
@@ -1299,9 +1341,9 @@ function Support() {
       <div className="wrap section" style={{ paddingTop: 8, maxWidth: 760 }}>
         <div className="sec-head" style={{ marginBottom: 16 }}><div><h2>Help & Support</h2><p>Message the shop directly, we usually reply within minutes</p></div></div>
         <div className="trust-row" style={{ marginBottom: 20, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)' }}>
-          <div className="trust-item"><div className="ti-ic" style={{ background: 'var(--teal-50)', color: 'var(--teal)' }}><Icon name="phone" size={19} /></div><div><h4>Call us</h4><p>16xxx · 9am–9pm daily</p></div></div>
+          <div className="trust-item"><div className="ti-ic" style={{ background: 'var(--teal-50)', color: 'var(--teal)' }}><Icon name="phone" size={19} /></div><div><h4>Call us</h4><p>16xxx · 9am-9pm daily</p></div></div>
           <div className="trust-item"><div className="ti-ic" style={{ background: 'var(--amber-50)', color: 'var(--amber-600)' }}><Icon name="message-circle" size={19} /></div><div><h4>WhatsApp</h4><p>+880 1777-000111</p></div></div>
-          <div className="trust-item"><div className="ti-ic" style={{ background: 'var(--teal-50)', color: 'var(--teal)' }}><Icon name="mail" size={19} /></div><div><h4>Email</h4><p>help@4igadgets.bd</p></div></div>
+          <div className="trust-item"><div className="ti-ic" style={{ background: 'var(--teal-50)', color: 'var(--teal)' }}><Icon name="mail" size={19} /></div><div><h4>Email</h4><p>help@4imart.bd</p></div></div>
         </div>
 
         {!user ? (
@@ -1314,8 +1356,8 @@ function Support() {
         ) : (
           <div className="chat">
             <div className="chat-head">
-              <div className="av">4i</div>
-              <div><div style={{ fontWeight: 700, fontSize: 14.5 }}>4iGadgets Support</div><div style={{ fontSize: 12, color: 'var(--green)' }}>● Online · replies in ~5 min</div></div>
+              <div className="av"><LogoMark size={24} color="#fff" /></div>
+              <div><div style={{ fontWeight: 700, fontSize: 14.5 }}>4iMart Support</div><div style={{ fontSize: 12, color: 'var(--green)' }}>● Online · replies in ~5 min</div></div>
             </div>
             <div className="chat-body" ref={bodyRef}>
               {msgs.map((m, i) => <div key={i} className={'bubble ' + m.who}>{m.t}<span className="time">{m.time}</span></div>)}
@@ -1334,7 +1376,7 @@ function Support() {
 
 /* ===== screens_info.jsx ===== */
 /* ============================================================
-   4iGadgets — Info pages: Delivery info & Refund Policy
+   4iMart - Info pages: Delivery info & Refund Policy
    ============================================================ */
 
 function InfoPage({ crumb, icon, title, intro, children }) {
@@ -1376,12 +1418,12 @@ function DeliveryInfo() {
         <div className="info-stat-card">
           <div className="kpi-ic" style={{ background: 'var(--teal-50)', color: 'var(--teal)' }}><Icon name="map-pin" size={20} /></div>
           <div className="info-stat-val">Inside Dhaka</div>
-          <div className="info-stat-sub">1–2 business days · ৳80 (free over ৳2,000)</div>
+          <div className="info-stat-sub">1-2 business days · ৳80 (free over ৳2,000)</div>
         </div>
         <div className="info-stat-card">
           <div className="kpi-ic" style={{ background: 'var(--amber-50)', color: 'var(--amber-600)' }}><Icon name="globe" size={20} /></div>
           <div className="info-stat-val">Outside Dhaka</div>
-          <div className="info-stat-sub">2–4 business days · ৳120 nationwide</div>
+          <div className="info-stat-sub">2-4 business days · ৳120 nationwide</div>
         </div>
         <div className="info-stat-card">
           <div className="kpi-ic" style={{ background: 'var(--teal-50)', color: 'var(--teal)' }}><Icon name="package-check" size={20} /></div>
@@ -1392,7 +1434,7 @@ function DeliveryInfo() {
 
       <div className="info-section">
         <InfoBlock icon="clock" title="How long will my order take?">
-          <p>Orders placed before 6 PM are dispatched the same day. Inside Dhaka city you'll usually receive your parcel within <b>1–2 business days</b>, and anywhere else in the country within <b>2–4 business days</b>. Large appliances may take an extra day for safe handling.</p>
+          <p>Orders placed before 6 PM are dispatched the same day. Inside Dhaka city you'll usually receive your parcel within <b>1-2 business days</b>, and anywhere else in the country within <b>2-4 business days</b>. Large appliances may take an extra day for safe handling.</p>
         </InfoBlock>
         <InfoBlock icon="phone-call" title="We call before we deliver">
           <p>Our rider or courier partner will call you on the phone number from your order before arriving, so please keep it switched on. If we can't reach you, we'll try again the next day.</p>
@@ -1408,7 +1450,7 @@ function DeliveryInfo() {
       <div className="info-cta">
         <div>
           <h3>Have a question about your delivery?</h3>
-          <p>Our team is here 9am–9pm, every day.</p>
+          <p>Our team is here 9am-9pm, every day.</p>
         </div>
         <button className="btn btn-primary btn-lg" onClick={() => navigate('support')}><Icon name="headset" size={17} /> Contact support</button>
       </div>
@@ -1430,12 +1472,12 @@ function RefundPolicy() {
         <div className="info-stat-card">
           <div className="kpi-ic" style={{ background: 'var(--amber-50)', color: 'var(--amber-600)' }}><Icon name="shield-check" size={20} /></div>
           <div className="info-stat-val">Brand warranty</div>
-          <div className="info-stat-sub">1–5 years on eligible products</div>
+          <div className="info-stat-sub">1-5 years on eligible products</div>
         </div>
         <div className="info-stat-card">
           <div className="kpi-ic" style={{ background: 'var(--teal-50)', color: 'var(--teal)' }}><Icon name="wallet" size={20} /></div>
           <div className="info-stat-val">Fast refunds</div>
-          <div className="info-stat-sub">To bKash/Nagad within 3–5 days</div>
+          <div className="info-stat-sub">To bKash/Nagad within 3-5 days</div>
         </div>
       </div>
 
@@ -1447,7 +1489,7 @@ function RefundPolicy() {
           <p>Many products carry an official brand warranty (clearly shown on the product page). If a fault appears during the warranty period, we'll arrange a repair or replacement at no cost to you.</p>
         </InfoBlock>
         <InfoBlock icon="wallet" title="How refunds work">
-          <p>Once we receive and inspect the returned item, your refund is issued to your original payment method: <b>bKash or Nagad within 3–5 business days</b>. For Cash on Delivery orders, we refund to your preferred mobile wallet.</p>
+          <p>Once we receive and inspect the returned item, your refund is issued to your original payment method: <b>bKash or Nagad within 3-5 business days</b>. For Cash on Delivery orders, we refund to your preferred mobile wallet.</p>
         </InfoBlock>
         <InfoBlock icon="shirt" title="Clothing & shoes">
           <p>Apparel and footwear can be exchanged for a different size within 7 days, as long as they're unworn and undamaged. Hygiene items like innerwear and beauty products that have been opened cannot be returned.</p>
@@ -1471,7 +1513,7 @@ function RefundPolicy() {
 
 /* ===== screens_admin.jsx ===== */
 /* ============================================================
-   4iGadgets — Admin screens
+   4iMart - Admin screens
    ============================================================ */
 
 function AdminLogin() {
@@ -1480,11 +1522,11 @@ function AdminLogin() {
   const [password, setPassword] = useState('');
   const submit = () => loginAdmin(email.trim(), password);
   return (
-    <div className="auth-wrap" style={{ background: 'linear-gradient(160deg,#0c3e4b,#082c36)' }}>
+    <div className="auth-wrap" style={{ background: 'linear-gradient(160deg,#11414e,#0a2730)' }}>
       <div className="auth-card fade-in" style={{ background: '#fff' }}>
         <div className="row gap-10" style={{ marginBottom: 6 }}>
           <div style={{ width: 40, height: 40, borderRadius: 11, background: 'var(--teal)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="shield" size={20} /></div>
-          <div className="logo" style={{ fontSize: 19 }}>4i<span className="g">Gadgets</span></div>
+          <div className="logo"><Logo height={26} /></div>
         </div>
         <h1 style={{ marginTop: 14 }}>Admin Panel</h1>
         <p className="sub">Staff access only. Customer accounts won't work here.</p>
@@ -1513,7 +1555,7 @@ function AdminShell({ active, title, children, action }) {
     <div className={'admin' + (collapsed ? ' collapsed' : '')}>
       <aside className="admin-side">
         <div className="as-logo">
-          {collapsed ? <span style={{ fontWeight: 800 }}>4i</span> : <><span>4i<span className="g">Gadgets</span></span> <span style={{ fontSize: 10, color: '#8fa9ad', fontWeight: 700, letterSpacing: '.1em', marginLeft: 2 }}>ADMIN</span></>}
+          {collapsed ? <LogoMark size={28} color="#f3f7f8" /> : <><Logo dark height={24} /> <span style={{ fontSize: 10, color: '#8fa9ad', fontWeight: 700, letterSpacing: '.1em', marginLeft: 2 }}>ADMIN</span></>}
         </div>
         {nav.map(([k, ic, label]) => <a key={k} className={active === k ? 'on' : ''} onClick={() => navigate(k)} title={collapsed ? label : undefined}><Icon name={ic} size={18} /> <span className="as-label">{label}</span></a>)}
         <div className="as-foot">
@@ -1567,7 +1609,7 @@ function AdminDashboard() {
 
   return (
     <AdminShell active="admin-dashboard" title="Dashboard">
-      <p className="muted" style={{ margin: '0 0 20px', fontSize: 14 }}>Welcome back! Here's what's happening at 4iGadgets today.</p>
+      <p className="muted" style={{ margin: '0 0 20px', fontSize: 14 }}>Welcome back! Here's what's happening at 4iMart today.</p>
       <div className="kpi-grid">
         {kpis.map(([ic, val, lbl, bg, col, trend]) => (
           <div className="kpi" key={lbl}>
@@ -1678,13 +1720,13 @@ function BannerEditorModal({ onClose }) {
   const { banner, reloadCatalog, toast, isMobile } = useShop();
   const [f, setF] = useState({ ...BANNER_DEFAULT, ...banner });
   const set = (k) => (e) => setF(s => ({ ...s, [k]: e.target.value }));
-  const themes = [['amber', 'Terracotta', '#E76F51'], ['teal', 'Teal', '#0F4C5C'], ['cream', 'Light', '#FAF7F2']];
+  const themes = [['amber', 'Orange', '#ee8434'], ['teal', 'Teal', '#165060'], ['cream', 'Light', '#FAF7F2']];
   const targets = [['category', 'Shop All'], ['cat:smartphones', 'Smartphones'], ['cat:mens', "Men's Fashion"], ['cat:womens', "Women's Fashion"], ['cat:appliances', 'Appliances'], ['deals', 'Best deals']];
   const save = async () => {
     try {
       await api('/api/admin/banner', { method: 'PUT', body: JSON.stringify(f) });
       await reloadCatalog();
-      toast('Banner updated — now live on the homepage', 'check-circle-2');
+      toast('Banner updated, now live on the homepage', 'check-circle-2');
       onClose();
     } catch (e) { toast(e.message || 'Could not save banner', 'alert-triangle'); }
   };
@@ -1757,7 +1799,7 @@ function HeroEditorModal({ onClose }) {
     try {
       await api('/api/admin/hero', { method: 'PUT', body: JSON.stringify(f) });
       await reloadCatalog();
-      toast('Homepage hero updated — now live', 'check-circle-2');
+      toast('Homepage hero updated, now live', 'check-circle-2');
       onClose();
     } catch (e) { toast(e.message || 'Could not save hero', 'alert-triangle'); }
   };
@@ -1925,7 +1967,7 @@ function AdminOrderModal({ o, onClose, onStatus, onPay }) {
       </>}>
       <div className="row gap-8" style={{ marginBottom: 16, flexWrap: 'wrap' }}><StatusBadge status={o.status} /><PayBadge status={o.payStatus} /><span className="muted" style={{ fontSize: 12.5 }}>· {o.date}</span></div>
 
-      {/* Customer — click to see full details */}
+      {/* Customer - click to see full details */}
       <div className="card" style={{ padding: 14, marginBottom: 12, background: 'var(--cream)', cursor: 'pointer' }} title="View customer details" onClick={() => setShowCustomer(true)}>
         <div className="cust-cell">
           <div className="ca" style={{ width: 40, height: 40 }}>{o.guest ? 'G' : o.customer[0]}</div>
@@ -1966,7 +2008,7 @@ function AdminInfoRow({ icon, label, value }) {
       <Icon name={icon} size={15} style={{ color: 'var(--teal)', marginTop: 2 }} />
       <div style={{ flex: 1 }}>
         <div className="muted" style={{ fontSize: 11.5 }}>{label}</div>
-        <div style={{ fontSize: 13.5 }}>{value || '—'}</div>
+        <div style={{ fontSize: 13.5 }}>{value || '-'}</div>
       </div>
     </div>
   );
@@ -1999,8 +2041,8 @@ function AdminCustomerModal({ order, onClose }) {
       {!order.guest && <AdminInfoRow icon="home" label="Saved address" value={savedAddr} />}
       {!order.guest && (
         <div className="row gap-20" style={{ marginTop: 14 }}>
-          <div><div className="muted" style={{ fontSize: 11.5 }}>Total orders</div><div style={{ fontWeight: 800, fontSize: 18 }}>{loading ? '…' : (c ? c.orderCount : '—')}</div></div>
-          <div><div className="muted" style={{ fontSize: 11.5 }}>Total paid</div><div style={{ fontWeight: 800, fontSize: 18, color: 'var(--teal)' }}>{loading ? '…' : (c ? G.taka(c.totalSpent) : '—')}</div></div>
+          <div><div className="muted" style={{ fontSize: 11.5 }}>Total orders</div><div style={{ fontWeight: 800, fontSize: 18 }}>{loading ? '…' : (c ? c.orderCount : '-')}</div></div>
+          <div><div className="muted" style={{ fontSize: 11.5 }}>Total paid</div><div style={{ fontWeight: 800, fontSize: 18, color: 'var(--teal)' }}>{loading ? '…' : (c ? G.taka(c.totalSpent) : '-')}</div></div>
         </div>
       )}
     </Modal>
@@ -2292,7 +2334,7 @@ function AdminSupport() {
 
 /* ===== app.jsx ===== */
 /* ============================================================
-   4iGadgets — App shell: router, state, device toggle
+   4iMart - App shell: router, state, device toggle
    ============================================================ */
 const S = { Home, Listing, Product, Cart, Checkout, Confirmation, Login, Register, Account, Support, DeliveryInfo, RefundPolicy, AdminLogin, AdminDashboard, AdminOrders, AdminCategories, AdminProducts, AdminSupport };
 
@@ -2432,9 +2474,14 @@ function App({ initialRoute = 'home' }) {
     <Shop.Provider value={ctx}>
       <div className={'app-root' + (isMobile ? ' mobile' : '')}>
         {loaded ? <Guarded /> : (
-          <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, color: 'var(--muted)' }}>
-            <div className="logo" style={{ fontSize: 26 }}>4i<span className="g">Gadgets</span></div>
-            <div style={{ fontSize: 13 }}>Loading store…</div>
+          <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            {/* Animated brand mark: the "4" draws in, the stem pops, the wheels bounce. */}
+            <svg className="fourimart-loader" viewBox="0 0 64 64" fill="none" role="img" aria-label="Loading">
+              <path className="diag" d={BRAND_PATHS.diag} stroke="var(--teal)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+              <path className="stem" d={BRAND_PATHS.stem} stroke="var(--teal)" strokeWidth="7" strokeLinecap="round" />
+              <circle className="wheel w1" cx="20" cy="52" r="4.5" fill="var(--amber)" />
+              <circle className="wheel w2" cx="38" cy="52" r="4.5" fill="var(--amber)" />
+            </svg>
           </div>
         )}
         {/* Modals portal here; toasts float above everything. */}

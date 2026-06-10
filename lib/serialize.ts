@@ -1,7 +1,7 @@
 /* ============================================================
    DB row  ->  UI shape serializers.
 
-   The existing 4iGadgets prototype UI expects a few presentational
+   The existing 4iMart prototype UI expects a few presentational
    fields that are intentionally NOT in the persisted schema (brand,
    tint, rating, reviews, feature bullets, category icon/group).
    We synthesize them deterministically here so the design renders

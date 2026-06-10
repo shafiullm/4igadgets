@@ -1,5 +1,5 @@
 /* ============================================================
-   GET /api/orders/[id]/invoice — download a PDF invoice.
+   GET /api/orders/[id]/invoice - download a PDF invoice.
    Only the customer who owns the order may download it.
    ============================================================ */
 import { eq, inArray } from "drizzle-orm";
