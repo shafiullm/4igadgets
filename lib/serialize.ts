@@ -124,7 +124,8 @@ export type UiProduct = {
   disc: number; // 0 = no discount
   stock: number;
   desc: string;
-  imageUrl: string | null;
+  imageUrl: string | null; // cover image (first of `images`)
+  images: string[]; // full gallery, oldest-first; [] = placeholder
   // synthesized, presentational only:
   brand: string;
   tint: "a" | "b";
@@ -132,6 +133,22 @@ export type UiProduct = {
   reviews: number; // real review count
   features: string[];
 };
+
+/** Parse the image_urls JSON column; legacy rows fall back to the single image_url. */
+export function productImages(p: Product): string[] {
+  if (p.imageUrls) {
+    try {
+      const arr = JSON.parse(p.imageUrls);
+      if (Array.isArray(arr)) {
+        const urls = arr.filter((u): u is string => typeof u === "string" && u.length > 0);
+        if (urls.length) return urls;
+      }
+    } catch {
+      /* fall through to imageUrl */
+    }
+  }
+  return p.imageUrl ? [p.imageUrl] : [];
+}
 
 /** `rating` (avg) and `reviewCount` come from the reviews table; 0/0 = unrated. */
 export function serializeProduct(
@@ -141,6 +158,7 @@ export function serializeProduct(
   reviewCount = 0,
 ): UiProduct {
   const group = GROUP_BY_SLUG[categorySlug] ?? "tech";
+  const images = productImages(p);
   return {
     id: p.id,
     name: p.name,
@@ -150,7 +168,8 @@ export function serializeProduct(
     disc: p.discountedPrice ?? 0,
     stock: p.stock,
     desc: p.description ?? "",
-    imageUrl: p.imageUrl,
+    imageUrl: images[0] ?? null,
+    images,
     brand: p.name.split(" ")[0],
     tint: hashNum(p.id, 0, 1) === 0 ? "a" : "b",
     rating: Math.round(rating * 10) / 10,

@@ -7,7 +7,7 @@ import { getDb } from "@/lib/db";
 import { categories, products } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth/session";
 import { serializeProduct } from "@/lib/serialize";
-import { handle, json, notFound } from "@/lib/api";
+import { handle, json, notFound, cleanImageUrls } from "@/lib/api";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -22,7 +22,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
       price?: number;
       disc?: number;
       stock?: number;
-      imageUrl?: string;
+      imageUrl?: string; // legacy single URL (still accepted)
+      images?: string[]; // full gallery, first = cover; omit to leave unchanged
     };
 
     const db = await getDb();
@@ -43,6 +44,14 @@ export async function PATCH(req: Request, { params }: Ctx) {
       catSlug = cat?.slug ?? "";
     }
 
+    // Neither `images` nor legacy `imageUrl` sent -> leave images unchanged.
+    const list =
+      body.images != null
+        ? cleanImageUrls(body.images)
+        : body.imageUrl != null
+          ? cleanImageUrls([body.imageUrl])
+          : null;
+
     await db
       .update(products)
       .set({
@@ -53,7 +62,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
         discountedPrice:
           body.disc != null ? (Number(body.disc) || null) : existing.discountedPrice,
         stock: body.stock != null ? Number(body.stock) : existing.stock,
-        imageUrl: body.imageUrl ?? existing.imageUrl,
+        imageUrl: list ? list[0] ?? null : existing.imageUrl,
+        imageUrls: list ? (list.length ? JSON.stringify(list) : null) : existing.imageUrls,
       })
       .where(eq(products.id, id));
 

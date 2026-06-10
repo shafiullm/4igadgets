@@ -8,7 +8,7 @@ import { categories, products } from "@/lib/db/schema";
 import { newId } from "@/lib/db/id";
 import { requireAdmin } from "@/lib/auth/session";
 import { serializeProduct } from "@/lib/serialize";
-import { handle, json, badRequest } from "@/lib/api";
+import { handle, json, badRequest, cleanImageUrls } from "@/lib/api";
 
 const slugify = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -36,7 +36,8 @@ export async function POST(req: Request) {
       price?: number;
       disc?: number;
       stock?: number;
-      imageUrl?: string; // admin-entered URL (R2 uploads could replace this later)
+      imageUrl?: string; // legacy single URL (still accepted)
+      images?: string[]; // admin-entered URLs, first = cover (R2 uploads could replace this later)
     };
     const name = body.name?.trim();
     if (!name || !body.cat || !body.price) {
@@ -47,6 +48,7 @@ export async function POST(req: Request) {
     const cat = await db.select().from(categories).where(eq(categories.slug, body.cat)).get();
     if (!cat) return badRequest("Unknown category");
 
+    const images = cleanImageUrls(body.images ?? (body.imageUrl ? [body.imageUrl] : []));
     const id = newId("prd");
     await db.insert(products).values({
       id,
@@ -57,7 +59,8 @@ export async function POST(req: Request) {
       price: Number(body.price),
       discountedPrice: body.disc ? Number(body.disc) : null,
       stock: Number(body.stock ?? 0),
-      imageUrl: body.imageUrl ?? null,
+      imageUrl: images[0] ?? null,
+      imageUrls: images.length ? JSON.stringify(images) : null,
     });
     const created = await db.select().from(products).where(eq(products.id, id)).get();
     return json({ product: serializeProduct(created!, cat.slug) });

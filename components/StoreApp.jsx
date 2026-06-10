@@ -756,6 +756,7 @@ function Product() {
   const off = p.disc && p.disc > 0 ? Math.round((1 - p.disc / p.price) * 100) : 0;
   const related = G.products.filter(x => x.cat === p.cat && x.id !== p.id).slice(0, isMobile ? 2 : 4);
   const liked = favIds.includes(p.id);
+  const imgs = p.images && p.images.length ? p.images : (p.imageUrl ? [p.imageUrl] : []);
 
   const loadReviews = async () => {
     try {
@@ -764,7 +765,7 @@ function Product() {
       if (r.myReview) { setDraftRating(r.myReview.rating); setDraftComment(r.myReview.comment || ''); }
     } catch { /* ignore */ }
   };
-  useEffect(() => { setDraftRating(0); setDraftComment(''); loadReviews(); }, [p.id]);
+  useEffect(() => { setImg(0); setDraftRating(0); setDraftComment(''); loadReviews(); }, [p.id]);
 
   const submitReview = async () => {
     if (!user) { toast('Log in to leave a review', 'star'); navigate('login'); return; }
@@ -783,8 +784,10 @@ function Product() {
       <div className="wrap section" style={{ paddingTop: 8 }}>
         <div className="pdp">
           <div className="pdp-gallery">
-            <div className="pdp-main-img">{off > 0 && <span className="sale-tag">-{off}% OFF</span>}{p.imageUrl ? <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Thumb label={`${p.brand} · view ${img + 1}`} tint={p.tint} style={{ height: '100%' }} />}</div>
-            <div className="pdp-thumbs">{[0, 1, 2, 3].map(i => <div key={i} className={'t' + (img === i ? ' on' : '')} onClick={() => setImg(i)}><Thumb label={`v${i + 1}`} tint={p.tint} style={{ height: '100%' }} /></div>)}</div>
+            <div className="pdp-main-img">{off > 0 && <span className="sale-tag">-{off}% OFF</span>}{imgs.length ? <img src={imgs[Math.min(img, imgs.length - 1)]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Thumb label={`${p.brand} · view ${img + 1}`} tint={p.tint} style={{ height: '100%' }} />}</div>
+            <div className="pdp-thumbs">{imgs.length
+              ? imgs.map((u, i) => <div key={i} className={'t' + (img === i ? ' on' : '')} onClick={() => setImg(i)}><img src={u} alt={`${p.name} view ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>)
+              : [0, 1, 2, 3].map(i => <div key={i} className={'t' + (img === i ? ' on' : '')} onClick={() => setImg(i)}><Thumb label={`v${i + 1}`} tint={p.tint} style={{ height: '100%' }} /></div>)}</div>
           </div>
           <div>
             <div className="pc-cat">{G.catName(p.cat)} · {p.brand}</div>
@@ -2265,7 +2268,7 @@ function AdminProducts() {
             <tbody>
               {prods.map(p => (
                 <tr key={p.id}>
-                  <td><div className="cust-cell"><div style={{ width: 42, height: 42, borderRadius: 9, overflow: 'hidden', flex: '0 0 42px', border: '1px solid var(--line)' }}><Thumb label="" tint={p.tint} style={{ height: '100%' }} /></div><div><div className="cell-strong" style={{ maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div><div className="muted" style={{ fontSize: 11.5 }}>{p.brand}</div></div></div></td>
+                  <td><div className="cust-cell"><div style={{ width: 42, height: 42, borderRadius: 9, overflow: 'hidden', flex: '0 0 42px', border: '1px solid var(--line)' }}>{p.imageUrl ? <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Thumb label="" tint={p.tint} style={{ height: '100%' }} />}</div><div><div className="cell-strong" style={{ maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div><div className="muted" style={{ fontSize: 11.5 }}>{p.brand}</div></div></div></td>
                   <td>{G.catName(p.cat)}</td>
                   <td><div className="cell-strong"><Tk>{G.priceOf(p)}</Tk></div>{p.disc > 0 && <div className="muted" style={{ fontSize: 11.5, textDecoration: 'line-through' }}><Tk>{p.price}</Tk></div>}</td>
                   <td>{p.stock <= 10 ? <Badge kind="b-amber">{p.stock} left</Badge> : <span>{p.stock}</span>}</td>
@@ -2299,11 +2302,16 @@ function AdminProducts() {
 }
 
 function ProductFormModal({ p, onClose, onSave }) {
-  const [f, setF] = useState({ id: p.id || null, name: p.name || '', cat: p.cat || 'smartphones', brand: p.brand || '', desc: p.desc || '', price: p.price || '', disc: p.disc || '', stock: p.stock || '', tint: p.tint || 'a', imageUrl: p.imageUrl || '' });
+  const [f, setF] = useState({ id: p.id || null, name: p.name || '', cat: p.cat || 'smartphones', brand: p.brand || '', desc: p.desc || '', price: p.price || '', disc: p.disc || '', stock: p.stock || '', tint: p.tint || 'a' });
+  // Image URL rows; the first non-empty URL becomes the cover image. Max 8.
+  const [imgs, setImgs] = useState(() => (p.images && p.images.length ? p.images : (p.imageUrl ? [p.imageUrl] : [''])));
   const set = (k) => (e) => setF(s => ({ ...s, [k]: e.target.value }));
+  const setImgAt = (i) => (e) => setImgs(list => list.map((u, j) => (j === i ? e.target.value : u)));
+  const addImg = () => setImgs(list => [...list, '']);
+  const rmImg = (i) => setImgs(list => (list.length > 1 ? list.filter((_, j) => j !== i) : ['']));
   return (
     <Modal title={p.id ? 'Edit product' : 'Add product'} onClose={onClose}
-      footer={<><button className="btn btn-ghost" onClick={onClose}>Cancel</button><button className="btn btn-primary" onClick={() => onSave({ ...f, price: +f.price, disc: +f.disc || 0, stock: +f.stock })}><Icon name="check" size={16} /> Save product</button></>}>
+      footer={<><button className="btn btn-ghost" onClick={onClose}>Cancel</button><button className="btn btn-primary" onClick={() => onSave({ ...f, price: +f.price, disc: +f.disc || 0, stock: +f.stock, images: imgs.map(u => u.trim()).filter(Boolean) })}><Icon name="check" size={16} /> Save product</button></>}>
       <div className="form-grid">
         <Field label="Product name" span2><input className="inp" value={f.name} onChange={set('name')} placeholder="e.g. Aurora X12 Smartphone" /></Field>
         <Field label="Category">
@@ -2317,10 +2325,20 @@ function ProductFormModal({ p, onClose, onSave }) {
           <select className="sel" value={f.tint} onChange={set('tint')}><option value="a">Warm</option><option value="b">Cool</option></select>
         </Field>
         <Field label="Description" span2><textarea className="inp" value={f.desc} onChange={set('desc')} placeholder="Describe the product…" /></Field>
-        {/* Image is stored as a URL for now (no paid storage). Cloudflare R2 could
-            be added later for direct uploads; this field would then hold the R2 URL. */}
-        <Field label="Image URL" span2 hint="Paste a public image URL (R2 uploads can be added later)">
-          <input className="inp" value={f.imageUrl} onChange={set('imageUrl')} placeholder="https://…/product.jpg" />
+        {/* Images are stored as URLs for now (no paid storage) - see README "Product
+            images" for free hosting options. Cloudflare R2 could later back direct
+            uploads; these fields would then hold the R2 URLs. */}
+        <Field label="Images" span2 hint="Paste public image URLs - the first is the cover photo (max 8)">
+          {imgs.map((u, i) => (
+            <div className="row gap-8" key={i} style={{ marginBottom: 8 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--line)', flex: '0 0 38px' }}>
+                {u.trim() && <img src={u.trim()} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+              </div>
+              <input className="inp" style={{ flex: 1 }} value={u} onChange={setImgAt(i)} placeholder={i === 0 ? 'https://…/cover.jpg' : 'https://…/photo.jpg'} />
+              <button className="btn btn-ghost btn-icon" title="Remove image" style={{ flex: '0 0 auto' }} onClick={() => rmImg(i)}><Icon name="x" size={15} /></button>
+            </div>
+          ))}
+          {imgs.length < 8 && <button className="btn btn-soft btn-sm" onClick={addImg}><Icon name="plus" size={15} /> Add another image</button>}
         </Field>
       </div>
     </Modal>

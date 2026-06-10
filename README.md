@@ -195,11 +195,25 @@ status) are stored as TEXT (SQLite has no native enums) and mapped to the UI in
 
 ## Product images
 
-Admins paste a public **image URL** when creating/editing a product (no paid storage
-required). Where a URL is present it renders; otherwise the original styled
-placeholder shows. See the comment in `components/StoreApp.jsx` /
-`app/api/admin/products/route.ts` for where **Cloudflare R2** could later back direct
-uploads.
+Each product holds an ordered **gallery of public image URLs** (up to 8); the first
+URL is the cover photo shown on cards and in the admin list, and the product page
+renders the rest as clickable thumbnails. Admins manage the list from
+**Admin → Products → Add/Edit product**. Where no URL is present the original styled
+placeholder shows.
+
+Storage-wise this stays free: the database only stores URLs (`image_urls` JSON column,
+with `image_url` kept in sync as the cover), so images can live on any free host:
+
+- **Cloudflare R2 (recommended next step):** the app already runs on Cloudflare.
+  R2's free tier gives 10 GB storage and **zero egress fees**. Create a bucket
+  (`wrangler r2 bucket create 4igadgets-images`), enable its public `r2.dev` URL (or
+  attach a custom domain), add an `r2_buckets` binding in `wrangler.jsonc`, and a small
+  authed `POST /api/admin/uploads` route can accept files from the product form and
+  return the public URL to store. Until then, upload via the Cloudflare dashboard and
+  paste the public URL.
+- **Other free options:** Cloudinary's free tier (transforms + CDN), or any host that
+  serves a direct, hotlinkable image URL. Avoid linking images from other stores'
+  sites - those break without notice.
 
 ## Notes
 
