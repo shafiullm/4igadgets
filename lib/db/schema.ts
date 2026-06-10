@@ -44,7 +44,10 @@ export const products = sqliteTable("products", {
   price: integer("price").notNull(), // whole Taka (৳)
   discountedPrice: integer("discounted_price"), // nullable; null = no discount
   stock: integer("stock").notNull().default(0),
+  // Cover image; kept in sync with the first entry of imageUrls.
   imageUrl: text("image_url"),
+  // JSON array of image URLs (gallery), e.g. '["https://…/1.jpg","https://…/2.jpg"]'.
+  imageUrls: text("image_urls"),
   createdAt: integer("created_at", { mode: "timestamp_ms" })
     .notNull()
     .default(sql`(unixepoch() * 1000)`),
