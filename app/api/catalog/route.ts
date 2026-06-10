@@ -2,7 +2,7 @@
 import { getDb } from "@/lib/db";
 import { categories, products } from "@/lib/db/schema";
 import { serializeCategory, serializeProduct } from "@/lib/serialize";
-import { getHero, getBanner } from "@/lib/settings";
+import { getHero, getBanner, getNavLinks } from "@/lib/settings";
 import { ratingMap } from "@/lib/reviews";
 import { handle, json } from "@/lib/api";
 
@@ -14,6 +14,10 @@ export async function GET() {
     const ratings = await ratingMap(db);
     const hero = await getHero(db);
     const banner = await getBanner(db);
+    const navLinks = await getNavLinks(db);
+    // Drop slugs whose category has since been deleted; empty = automatic.
+    const liveSlugs = new Set(cats.map((c) => c.slug));
+    const navCats = navLinks.slugs.filter((s) => liveSlugs.has(s));
 
     const slugById = new Map(cats.map((c) => [c.id, c.slug]));
     const countBySlug = new Map<string, number>();
@@ -30,6 +34,7 @@ export async function GET() {
       }),
       hero,
       banner,
+      navCats,
     });
   });
 }

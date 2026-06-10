@@ -79,6 +79,7 @@ const G = {
   // hydrated from /api/catalog:
   categories: [],
   products: [],
+  navCats: [], // categories pinned to the header nav (admin-configurable)
   adminCats: [],
   featuredIds: [],
   dealIds: [],
@@ -91,6 +92,12 @@ const G = {
 function applyCatalog(data) {
   G.categories = data.categories || [];
   G.products = data.products || [];
+  // Header/footer category anchors: the admin's picks (by slug), or the
+  // first 5 categories when nothing has been configured.
+  const picked = (data.navCats || [])
+    .map((slug) => G.categories.find((c) => c.id === slug))
+    .filter(Boolean);
+  G.navCats = picked.length ? picked : G.categories.slice(0, 5);
   G.adminCats = G.categories.map((c) => ({ ...c, products: c.count, active: true }));
   // Featured = a spread across the catalog; Deals = biggest discounts.
   G.featuredIds = G.products.slice(0, 8).map((p) => p.id);
@@ -266,7 +273,7 @@ function Header() {
   const { navigate, route, cartCount, user, isMobile } = useShop();
   const navItems = [
     ['home', 'Home'], ['category', 'Shop All'],
-    ...G.categories.slice(0, 5).map(c => [`cat:${c.id}`, c.name]),
+    ...G.navCats.map(c => [`cat:${c.id}`, c.name]),
   ];
   if (isMobile) {
     return (
@@ -358,7 +365,7 @@ function Footer() {
         </div>
         <div>
           <h5>Shop</h5>
-          {G.categories.slice(0, 5).map(c => <a key={c.id} onClick={() => navigate('category', { cat: c.id })}>{c.name}</a>)}
+          {G.navCats.map(c => <a key={c.id} onClick={() => navigate('category', { cat: c.id })}>{c.name}</a>)}
         </div>
         <div>
           <h5>Help</h5>
@@ -1672,6 +1679,7 @@ function AdminDashboard() {
         </div>
       </div>
 
+      <NavManager />
       <HeroManager />
       <BannerManager />
     </AdminShell>
@@ -1763,6 +1771,66 @@ function BannerEditorModal({ onClose }) {
         </Field>
       </div>
     </Modal>
+  );
+}
+
+// ---- Storefront navbar manager ----
+// Lets the admin choose which categories appear as anchors in the header
+// (and the footer "Shop" column). "Home" and "Shop All" are fixed.
+const NAV_LINKS_MAX = 5;
+function NavManager() {
+  const { reloadCatalog, toast, isMobile } = useShop();
+  const pad = (slugs) => [...slugs, ...Array(Math.max(0, NAV_LINKS_MAX - slugs.length)).fill('')].slice(0, NAV_LINKS_MAX);
+  // Seed the slots from the live nav (admin picks, or the automatic first 5).
+  const [slots, setSlots] = useState(() => pad(G.navCats.map(c => c.id)));
+  const [saving, setSaving] = useState(false);
+  const setSlot = (i) => (e) => setSlots(s => s.map((x, xi) => xi === i ? e.target.value : x));
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await api('/api/admin/nav', { method: 'PUT', body: JSON.stringify({ slugs: slots.filter(Boolean) }) });
+      await reloadCatalog();
+      setSlots(pad(G.navCats.map(c => c.id)));
+      toast('Navbar updated, now live on the storefront', 'check-circle-2');
+    } catch (e) { toast(e.message || 'Could not save navbar', 'alert-triangle'); }
+    finally { setSaving(false); }
+  };
+
+  const picked = slots.filter(Boolean).map(slug => G.categories.find(c => c.id === slug)).filter(Boolean);
+  return (
+    <div className="tbl-card" style={{ marginTop: 20 }}>
+      <div className="tbl-head">
+        <div className="row gap-10">
+          <div className="kpi-ic" style={{ width: 38, height: 38, margin: 0, borderRadius: 10, background: 'var(--teal-50)', color: 'var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="menu" size={19} /></div>
+          <div><h3>Storefront navbar</h3><div className="muted" style={{ fontSize: 12 }}>Category links shown in the header & footer — “Home” and “Shop All” are fixed</div></div>
+        </div>
+        <button className="btn btn-primary btn-sm" onClick={save} disabled={saving}><Icon name="check" size={15} /> {saving ? 'Saving…' : 'Save & publish'}</button>
+      </div>
+      <div style={{ padding: isMobile ? 16 : 24 }}>
+        <div className="banner-preview-label">Live preview</div>
+        <div className="chips" style={{ marginBottom: 20 }}>
+          <span className="chip on"><Icon name="lock" size={12} style={{ marginRight: 5 }} />Home</span>
+          <span className="chip on"><Icon name="lock" size={12} style={{ marginRight: 5 }} />Shop All</span>
+          {picked.map(c => <span className="chip" key={c.id}>{c.name}</span>)}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
+          {slots.map((slug, i) => (
+            <Field key={i} label={'Link ' + (i + 1)}>
+              <select className="sel" value={slug} onChange={setSlot(i)}>
+                <option value="">— None —</option>
+                {G.categories
+                  .filter(c => c.id === slug || !slots.includes(c.id))
+                  .map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </Field>
+          ))}
+        </div>
+        <div className="muted" style={{ fontSize: 12, marginTop: 12 }}>
+          Up to {NAV_LINKS_MAX} category links, shown in this order. Leave all empty to show the first {NAV_LINKS_MAX} categories automatically.
+        </div>
+      </div>
+    </div>
   );
 }
 
