@@ -118,6 +118,49 @@ export async function setBanner(db: Db, config: BannerConfig): Promise<void> {
     .onConflictDoUpdate({ target: siteSettings.key, set: { value, updatedAt: new Date() } });
 }
 
+// ---- Navbar category links ----
+// Which categories appear as anchors in the storefront header (after the
+// fixed "Home" and "Shop All" links). Stored as category slugs in display
+// order. An empty list means "automatic": the first NAV_LINKS_MAX categories.
+export const NAV_LINKS_MAX = 5;
+
+export type NavLinksConfig = {
+  slugs: string[];
+};
+
+export const NAV_LINKS_DEFAULT: NavLinksConfig = { slugs: [] };
+
+export function normalizeNavLinks(input: unknown): NavLinksConfig {
+  const o = (input ?? {}) as Record<string, unknown>;
+  const raw = Array.isArray(o.slugs) ? o.slugs : [];
+  const slugs: string[] = [];
+  for (const s of raw) {
+    if (typeof s !== "string") continue;
+    const slug = s.trim().slice(0, 80);
+    if (slug && !slugs.includes(slug)) slugs.push(slug);
+    if (slugs.length >= NAV_LINKS_MAX) break;
+  }
+  return { slugs };
+}
+
+export async function getNavLinks(db: Db): Promise<NavLinksConfig> {
+  const row = await db.select().from(siteSettings).where(eq(siteSettings.key, "nav_links")).get();
+  if (!row) return NAV_LINKS_DEFAULT;
+  try {
+    return normalizeNavLinks(JSON.parse(row.value));
+  } catch {
+    return NAV_LINKS_DEFAULT;
+  }
+}
+
+export async function setNavLinks(db: Db, config: NavLinksConfig): Promise<void> {
+  const value = JSON.stringify(config);
+  await db
+    .insert(siteSettings)
+    .values({ key: "nav_links", value })
+    .onConflictDoUpdate({ target: siteSettings.key, set: { value, updatedAt: new Date() } });
+}
+
 export async function getHero(db: Db): Promise<HeroConfig> {
   const row = await db.select().from(siteSettings).where(eq(siteSettings.key, "hero")).get();
   if (!row) return HERO_DEFAULT;
