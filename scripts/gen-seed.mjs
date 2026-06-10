@@ -91,6 +91,10 @@ const products = [
   ["p47", "Skincare Gift Set", "beauty", 2990, 2290],
 ];
 
+// Admin-featured picks for the homepage (fewer than 8, so the
+// rating-based auto-fill is exercised too).
+const featured = new Set(["p1", "p4", "p33"]);
+
 const slugify = (s) =>
   s
     .toLowerCase()
@@ -117,7 +121,7 @@ sql += "\n";
 for (const [id, name, cat, price, disc] of products) {
   const description = desc[groupOf(cat)](name);
   const discVal = disc == null ? "NULL" : disc;
-  sql += `INSERT INTO products (id, name, slug, category_id, description, price, discounted_price, stock, image_url) VALUES ('${id}', '${esc(name)}', '${slugify(name)}', '${cat}', '${esc(description)}', ${price}, ${discVal}, ${20 + ((price % 7) + 1) * 5}, NULL);\n`;
+  sql += `INSERT INTO products (id, name, slug, category_id, description, price, discounted_price, stock, is_featured, image_url) VALUES ('${id}', '${esc(name)}', '${slugify(name)}', '${cat}', '${esc(description)}', ${price}, ${discVal}, ${20 + ((price % 7) + 1) * 5}, ${featured.has(id) ? 1 : 0}, NULL);\n`;
 }
 
 writeFileSync(out, sql);

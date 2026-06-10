@@ -36,6 +36,7 @@ export async function POST(req: Request) {
       price?: number;
       disc?: number;
       stock?: number;
+      featured?: boolean;
       imageUrl?: string; // admin-entered URL (R2 uploads could replace this later)
     };
     const name = body.name?.trim();
@@ -57,6 +58,7 @@ export async function POST(req: Request) {
       price: Number(body.price),
       discountedPrice: body.disc ? Number(body.disc) : null,
       stock: Number(body.stock ?? 0),
+      isFeatured: !!body.featured,
       imageUrl: body.imageUrl ?? null,
     });
     const created = await db.select().from(products).where(eq(products.id, id)).get();

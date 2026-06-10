@@ -4,6 +4,7 @@ import { categories, products } from "@/lib/db/schema";
 import { serializeCategory, serializeProduct } from "@/lib/serialize";
 import { getHero, getBanner, getNavLinks } from "@/lib/settings";
 import { ratingMap } from "@/lib/reviews";
+import { pickFeaturedIds, pickDealIds } from "@/lib/home-picks";
 import { handle, json } from "@/lib/api";
 
 export async function GET() {
@@ -35,6 +36,8 @@ export async function GET() {
       hero,
       banner,
       navCats,
+      featuredIds: pickFeaturedIds(prods, ratings),
+      dealIds: pickDealIds(prods),
     });
   });
 }

@@ -1,0 +1,1 @@
+ALTER TABLE `products` ADD `is_featured` integer DEFAULT false NOT NULL;

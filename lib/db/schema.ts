@@ -44,6 +44,7 @@ export const products = sqliteTable("products", {
   price: integer("price").notNull(), // whole Taka (৳)
   discountedPrice: integer("discounted_price"), // nullable; null = no discount
   stock: integer("stock").notNull().default(0),
+  isFeatured: integer("is_featured", { mode: "boolean" }).notNull().default(false),
   imageUrl: text("image_url"),
   createdAt: integer("created_at", { mode: "timestamp_ms" })
     .notNull()

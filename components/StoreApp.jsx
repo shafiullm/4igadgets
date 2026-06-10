@@ -99,13 +99,20 @@ function applyCatalog(data) {
     .filter(Boolean);
   G.navCats = picked.length ? picked : G.categories.slice(0, 5);
   G.adminCats = G.categories.map((c) => ({ ...c, products: c.count, active: true }));
-  // Featured = a spread across the catalog; Deals = biggest discounts.
-  G.featuredIds = G.products.slice(0, 8).map((p) => p.id);
-  G.dealIds = [...G.products]
-    .filter((p) => p.disc && p.disc > 0)
-    .sort((a, b) => b.price - b.disc - (a.price - a.disc))
-    .slice(0, 8)
-    .map((p) => p.id);
+  // Featured + deals are picked server-side (admin picks with algorithmic
+  // fill, and best percentage discounts respectively). The old client logic
+  // remains only as a fallback for stale/partial payloads.
+  const known = (ids) => (ids || []).filter((id) => G.products.some((p) => p.id === id));
+  G.featuredIds = known(data.featuredIds);
+  if (!G.featuredIds.length) G.featuredIds = G.products.slice(0, 8).map((p) => p.id);
+  G.dealIds =
+    data.dealIds != null
+      ? known(data.dealIds) // empty legitimately means "no deals today"
+      : [...G.products]
+          .filter((p) => p.disc && p.disc > 0)
+          .sort((a, b) => b.price - b.disc - (a.price - a.disc))
+          .slice(0, 8)
+          .map((p) => p.id);
 }
 
 /* ===== components.jsx ===== */
@@ -574,8 +581,8 @@ function Hero({ cfg }) {
 
 function Home() {
   const { navigate, heroConfig, isMobile } = useShop();
-  const featured = G.featuredIds.map(G.byId);
-  const deals = G.dealIds.map(G.byId).slice(0, isMobile ? 4 : 5);
+  const featured = G.featuredIds.map(G.byId).filter(Boolean);
+  const deals = G.dealIds.map(G.byId).filter(Boolean).slice(0, isMobile ? 4 : 5);
   const trust = [
     ['truck', 'Free delivery', 'On orders over ৳2,000', 'var(--teal-50)', 'var(--teal)'],
     ['shield-check', '1-year warranty', 'Official, genuine units', 'var(--amber-50)', 'var(--amber-600)'],
@@ -612,13 +619,15 @@ function Home() {
         </div></div>
       </section>
 
-      <section className="section">
-        <div className="wrap">
-          <div className="sec-head"><div><h2>🔥 Today's best deals</h2><p>Limited-time discounts, while stock lasts</p></div>
-            <span className="linkish" onClick={() => navigate('category', { sort: 'discount' })}>All deals <Icon name="arrow-right" size={15} /></span></div>
-          <div className={'pgrid' + (isMobile ? '' : ' cols-5')}>{deals.map(p => <ProductCard key={p.id} p={p} />)}</div>
-        </div>
-      </section>
+      {deals.length > 0 && (
+        <section className="section">
+          <div className="wrap">
+            <div className="sec-head"><div><h2>🔥 Today's best deals</h2><p>Limited-time discounts, while stock lasts</p></div>
+              <span className="linkish" onClick={() => navigate('category', { sort: 'discount' })}>All deals <Icon name="arrow-right" size={15} /></span></div>
+            <div className={'pgrid' + (isMobile ? '' : ' cols-5')}>{deals.map(p => <ProductCard key={p.id} p={p} />)}</div>
+          </div>
+        </section>
+      )}
 
       {/* marketing banner - editable from the admin dashboard */}
       <MarketingBanner />
@@ -2230,6 +2239,14 @@ function AdminProducts() {
   };
   useEffect(() => { load(); }, []);
 
+  // Pin/unpin a product in the homepage "Featured products" section.
+  const toggleFeatured = async (p) => {
+    try {
+      await api('/api/admin/products/' + p.id, { method: 'PATCH', body: JSON.stringify({ featured: !p.featured }) });
+      await load(); reloadCatalog();
+    } catch (e) { toast(e.message || 'Could not update product', 'alert-triangle'); }
+  };
+
   return (
     <AdminShell active="admin-products" title="Products"
       action={<button className="btn btn-primary btn-sm" onClick={() => setEdit({})}><Icon name="plus" size={16} /> Add product</button>}>
@@ -2252,6 +2269,7 @@ function AdminProducts() {
                   <div>{p.stock <= 10 ? <Badge kind="b-amber">{p.stock} left</Badge> : <span className="muted" style={{ fontSize: 12.5 }}>{p.stock} in stock</span>}</div>
                 </div>
                 <div className="adm-actions">
+                  <button className="btn btn-soft btn-sm" style={p.featured ? { color: 'var(--amber-600)' } : undefined} onClick={() => toggleFeatured(p)}><Icon name="star" size={15} /> {p.featured ? 'Featured' : 'Feature'}</button>
                   <button className="btn btn-soft btn-sm" onClick={() => setEdit(p)}><Icon name="pencil" size={15} /> Edit</button>
                   <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)', flex: '0 0 auto' }} onClick={() => setDel(p)}><Icon name="trash-2" size={15} /></button>
                 </div>
@@ -2261,7 +2279,7 @@ function AdminProducts() {
         ) : (
         <div className="tbl-wrap">
           <table className="tbl">
-            <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Featured</th><th>Actions</th></tr></thead>
             <tbody>
               {prods.map(p => (
                 <tr key={p.id}>
@@ -2269,6 +2287,9 @@ function AdminProducts() {
                   <td>{G.catName(p.cat)}</td>
                   <td><div className="cell-strong"><Tk>{G.priceOf(p)}</Tk></div>{p.disc > 0 && <div className="muted" style={{ fontSize: 11.5, textDecoration: 'line-through' }}><Tk>{p.price}</Tk></div>}</td>
                   <td>{p.stock <= 10 ? <Badge kind="b-amber">{p.stock} left</Badge> : <span>{p.stock}</span>}</td>
+                  <td><label className="check" style={{ gap: 6 }}>
+                    <input type="checkbox" checked={!!p.featured} onChange={() => toggleFeatured(p)} />
+                  </label></td>
                   <td><div className="row-actions">
                     <button className="act-btn" onClick={() => setEdit(p)}><Icon name="pencil" size={15} /></button>
                     <button className="act-btn danger" onClick={() => setDel(p)}><Icon name="trash-2" size={15} /></button>
@@ -2299,7 +2320,7 @@ function AdminProducts() {
 }
 
 function ProductFormModal({ p, onClose, onSave }) {
-  const [f, setF] = useState({ id: p.id || null, name: p.name || '', cat: p.cat || 'smartphones', brand: p.brand || '', desc: p.desc || '', price: p.price || '', disc: p.disc || '', stock: p.stock || '', tint: p.tint || 'a', imageUrl: p.imageUrl || '' });
+  const [f, setF] = useState({ id: p.id || null, name: p.name || '', cat: p.cat || 'smartphones', brand: p.brand || '', desc: p.desc || '', price: p.price || '', disc: p.disc || '', stock: p.stock || '', featured: !!p.featured, tint: p.tint || 'a', imageUrl: p.imageUrl || '' });
   const set = (k) => (e) => setF(s => ({ ...s, [k]: e.target.value }));
   return (
     <Modal title={p.id ? 'Edit product' : 'Add product'} onClose={onClose}
@@ -2315,6 +2336,11 @@ function ProductFormModal({ p, onClose, onSave }) {
         <Field label="Stock quantity"><input className="inp" type="number" value={f.stock} onChange={set('stock')} placeholder="0" /></Field>
         <Field label="Image tone">
           <select className="sel" value={f.tint} onChange={set('tint')}><option value="a">Warm</option><option value="b">Cool</option></select>
+        </Field>
+        <Field label="Homepage" hint="Featured products show first on the homepage">
+          <label className="check" style={{ gap: 6, paddingTop: 8 }}>
+            <input type="checkbox" checked={f.featured} onChange={e => setF(s => ({ ...s, featured: e.target.checked }))} /><span>Featured</span>
+          </label>
         </Field>
         <Field label="Description" span2><textarea className="inp" value={f.desc} onChange={set('desc')} placeholder="Describe the product…" /></Field>
         {/* Image is stored as a URL for now (no paid storage). Cloudflare R2 could

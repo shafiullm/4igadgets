@@ -22,6 +22,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
       price?: number;
       disc?: number;
       stock?: number;
+      featured?: boolean;
       imageUrl?: string;
     };
 
@@ -53,6 +54,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
         discountedPrice:
           body.disc != null ? (Number(body.disc) || null) : existing.discountedPrice,
         stock: body.stock != null ? Number(body.stock) : existing.stock,
+        isFeatured: body.featured != null ? !!body.featured : existing.isFeatured,
         imageUrl: body.imageUrl ?? existing.imageUrl,
       })
       .where(eq(products.id, id));

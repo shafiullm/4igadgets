@@ -29,6 +29,13 @@
       "when": 1780513561267,
       "tag": "0003_favourites_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1781108049910,
+      "tag": "0004_featured_products",
+      "breakpoints": true
     }
   ]
 }

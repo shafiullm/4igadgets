@@ -123,6 +123,7 @@ export type UiProduct = {
   price: number;
   disc: number; // 0 = no discount
   stock: number;
+  featured: boolean; // admin-pinned for the homepage "Featured products"
   desc: string;
   imageUrl: string | null;
   // synthesized, presentational only:
@@ -149,6 +150,7 @@ export function serializeProduct(
     price: p.price,
     disc: p.discountedPrice ?? 0,
     stock: p.stock,
+    featured: !!p.isFeatured,
     desc: p.description ?? "",
     imageUrl: p.imageUrl,
     brand: p.name.split(" ")[0],
